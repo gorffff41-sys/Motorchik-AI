@@ -151,9 +151,8 @@ class AutoSearchProcessor:
             # Формируем ответное сообщение
             if is_count_query:
                 message = self._generate_count_response_message(query, entities, len(formatted_cars))
-            else:
-                if fallback_applied:
-                    message = self._generate_fallback_message(query, entities, len(formatted_cars), fallback_criteria_desc)
+            elif fallback_applied:
+                message = self._generate_fallback_message(query, entities, len(formatted_cars), fallback_criteria_desc)
             else:
                 message = self._generate_response_message(query, entities, len(formatted_cars))
             

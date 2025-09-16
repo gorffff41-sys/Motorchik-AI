@@ -1,0 +1,1026 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚗 Автоассистент - Умный помощник по выбору автомобиля</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        :root {
+            --primary-color: #4f46e5;
+            --secondary-color: #7c3aed;
+            --accent-color: #06b6d4;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --error-color: #ef4444;
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8fafc;
+            --bg-tertiary: #f1f5f9;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --text-muted: #94a3b8;
+            --border-color: #e2e8f0;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+            --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --gradient-secondary: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --gradient-accent: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+
+        [data-theme="dark"] {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-tertiary: #334155;
+            --text-primary: #f8fafc;
+            --text-secondary: #cbd5e1;
+            --text-muted: #64748b;
+            --border-color: #334155;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.3);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        .header {
+            background: var(--gradient-primary);
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: white;
+            text-decoration: none;
+        }
+
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .theme-toggle {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: white;
+            font-size: 1.2rem;
+        }
+
+        .theme-toggle:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.1);
+        }
+
+        .language-toggle {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            border-radius: 20px;
+            padding: 0.5rem 1rem;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .language-toggle:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 2rem;
+            padding: 2rem 0;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+        }
+
+        /* Chat Section */
+        .chat-section {
+            background: var(--bg-secondary);
+            border-radius: 20px;
+            box-shadow: var(--shadow-lg);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 70vh;
+            animation: slideInUp 0.6s ease;
+        }
+
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .chat-header {
+            background: var(--gradient-secondary);
+            padding: 1.5rem;
+            color: white;
+            text-align: center;
+        }
+
+        .chat-header h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .chat-header p {
+            opacity: 0.9;
+            font-size: 0.9rem;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 1.5rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .message {
+            display: flex;
+            gap: 1rem;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.user {
+            flex-direction: row-reverse;
+        }
+
+        .message-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+
+        .message.user .message-avatar {
+            background: var(--gradient-primary);
+            color: white;
+        }
+
+        .message.assistant .message-avatar {
+            background: var(--gradient-accent);
+            color: white;
+        }
+
+        .message-content {
+            background: var(--bg-primary);
+            padding: 1rem 1.5rem;
+            border-radius: 18px;
+            max-width: 70%;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-color);
+            position: relative;
+        }
+
+        .message.user .message-content {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        .message.assistant .message-content {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+        }
+
+        .message-content::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 0;
+            height: 0;
+            border: 8px solid transparent;
+        }
+
+        .message.user .message-content::before {
+            right: -8px;
+            border-left-color: var(--primary-color);
+        }
+
+        .message.assistant .message-content::before {
+            left: -8px;
+            border-right-color: var(--bg-primary);
+        }
+
+        .typing-indicator {
+            display: flex;
+            gap: 0.3rem;
+            padding: 1rem 1.5rem;
+            background: var(--bg-primary);
+            border-radius: 18px;
+            max-width: 70%;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-color);
+            animation: fadeIn 0.3s ease;
+        }
+
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--text-muted);
+            animation: typing 1.4s infinite ease-in-out;
+        }
+
+        .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+        .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes typing {
+            0%, 80%, 100% {
+                transform: scale(0.8);
+                opacity: 0.5;
+            }
+            40% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .chat-input {
+            padding: 1.5rem;
+            background: var(--bg-primary);
+            border-top: 1px solid var(--border-color);
+        }
+
+        .input-group {
+            display: flex;
+            gap: 1rem;
+            align-items: flex-end;
+        }
+
+        .message-input {
+            flex: 1;
+            padding: 1rem 1.5rem;
+            border: 2px solid var(--border-color);
+            border-radius: 25px;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            font-size: 1rem;
+            resize: none;
+            min-height: 50px;
+            max-height: 120px;
+            transition: all 0.3s ease;
+        }
+
+        .message-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        .send-button {
+            background: var(--gradient-primary);
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: white;
+            font-size: 1.2rem;
+        }
+
+        .send-button:hover {
+            transform: scale(1.1);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .send-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Quick Actions */
+        .quick-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .quick-action-btn {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            white-space: nowrap;
+        }
+
+        .quick-action-btn:hover {
+            background: var(--primary-color);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        /* Sidebar */
+        .sidebar {
+            background: var(--bg-secondary);
+            border-radius: 20px;
+            padding: 1.5rem;
+            box-shadow: var(--shadow-lg);
+            height: fit-content;
+            animation: slideInRight 0.6s ease;
+        }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .sidebar-section {
+            margin-bottom: 2rem;
+        }
+
+        .sidebar-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .sidebar-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .stat-card {
+            background: var(--bg-primary);
+            padding: 1rem;
+            border-radius: 12px;
+            text-align: center;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .stat-number {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .filter-group {
+            margin-bottom: 1rem;
+        }
+
+        .filter-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .filter-input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+        }
+
+        .filter-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.1);
+        }
+
+        .filter-button {
+            width: 100%;
+            background: var(--gradient-primary);
+            color: white;
+            border: none;
+            padding: 0.75rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .filter-button:hover {
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .filter-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            margin-top: 1.5rem;
+        }
+        .filter-buttons .filter-button {
+            width: 100%;
+            font-size: 1.1rem;
+            padding: 1.1rem 0.5rem;
+            border-radius: 12px;
+        }
+        .reset-button {
+            background: var(--gradient-secondary) !important;
+        }
+        .reset-button:hover {
+            background: linear-gradient(135deg, #e91e63 0%, #f44336 100%) !important;
+        }
+
+        /* Notifications */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--success-color);
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            box-shadow: var(--shadow-lg);
+            z-index: 1000;
+            animation: slideInRight 0.3s ease;
+        }
+
+        .notification.error {
+            background: var(--error-color);
+        }
+
+        .notification.warning {
+            background: var(--warning-color);
+        }
+
+        /* Loading Animation */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .main-content {
+                padding: 1rem 0;
+            }
+
+            .chat-section {
+                height: 60vh;
+            }
+
+            .message-content {
+                max-width: 85%;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Dark mode specific styles */
+        [data-theme="dark"] .message-input {
+            background: var(--bg-tertiary);
+        }
+
+        [data-theme="dark"] .filter-input {
+            background: var(--bg-tertiary);
+        }
+
+        /* Smooth scrolling */
+        .chat-messages {
+            scroll-behavior: smooth;
+        }
+
+        /* Custom scrollbar */
+        .chat-messages::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .chat-messages::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 3px;
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb:hover {
+            background: var(--text-muted);
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <a href="#" class="logo">
+                🚗 Автоассистент
+            </a>
+            <div class="header-controls">
+                <button class="theme-toggle" onclick="toggleTheme()" title="Переключить тему">
+                    🌙
+                </button>
+                <button class="language-toggle" onclick="toggleLanguage()" title="Переключить язык">
+                    🇷🇺
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <main class="main-content">
+            <section class="chat-section">
+                <div class="chat-header">
+                    <h2>💬 Чат с автоассистентом</h2>
+                    <p>Задайте вопрос о автомобилях, кредитах, тест-драйвах</p>
+                </div>
+                
+                <div class="chat-messages" id="chatMessages">
+                    <div class="message assistant">
+                        <div class="message-avatar">🤖</div>
+                        <div class="message-content">
+                            Привет! 👋 Я автоассистент, готов помочь вам с выбором автомобиля. 
+                            Что вас интересует? 🚗
+                        </div>
+                    </div>
+                </div>
+
+                <div class="chat-input">
+                    <div class="input-group">
+                        <textarea 
+                            class="message-input" 
+                            id="messageInput" 
+                            placeholder="Введите ваш вопрос..."
+                            rows="1"
+                            onkeydown="handleKeyDown(event)"
+                        ></textarea>
+                        <button class="send-button" onclick="sendMessage()" id="sendButton">
+                            ➤
+                        </button>
+                    </div>
+                    
+                    <div class="quick-actions">
+                        <button class="quick-action-btn" onclick="sendQuickMessage('найти BMW X5')">
+                            🔍 BMW X5
+                        </button>
+                        <button class="quick-action-btn" onclick="sendQuickMessage('тест-драйв')">
+                            🎯 Тест-драйв
+                        </button>
+                        <button class="quick-action-btn" onclick="sendQuickMessage('кредит')">
+                            💰 Кредит
+                        </button>
+                        <button class="quick-action-btn" onclick="sendQuickMessage('сравнить BMW X5 и Mercedes GLE')">
+                            📊 Сравнить
+                        </button>
+                        <button class="quick-action-btn" onclick="sendQuickMessage('рекомендации')">
+                            🎯 Рекомендации
+                        </button>
+                        <button class="quick-action-btn" onclick="sendQuickMessage('акции')">
+                            🎉 Акции
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <aside class="sidebar">
+                <div class="sidebar-section">
+                    <h3 class="sidebar-title">📊 Статистика</h3>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-number" id="totalCars">-</div>
+                            <div class="stat-label">Автомобилей</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" id="totalDealers">-</div>
+                            <div class="stat-label">Дилерских центров</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" id="avgPrice">-</div>
+                            <div class="stat-label">Средняя цена</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" id="totalQueries">0</div>
+                            <div class="stat-label">Запросов сегодня</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sidebar-section">
+                    <h3 class="sidebar-title">🔍 Поиск</h3>
+                    <div class="filter-group">
+                        <label class="filter-label">Марка</label>
+                        <input type="text" class="filter-input" id="brandFilter" placeholder="BMW, Mercedes...">
+                    </div>
+                    <div class="filter-group">
+                        <label class="filter-label">Цена до</label>
+                        <input type="number" class="filter-input" id="priceFilter" placeholder="2000000">
+                    </div>
+                    <div class="filter-group">
+                        <label class="filter-label">Год от</label>
+                        <input type="number" class="filter-input" id="yearFilter" placeholder="2020">
+                    </div>
+                    <div class="filter-buttons">
+                        <button class="filter-button" onclick="searchCars()">
+                            🔍 Найти автомобили
+                        </button>
+                        <button class="filter-button reset-button" onclick="resetFilters()">
+                            🗑️ Сбросить фильтры
+                        </button>
+                    </div>
+                </div>
+
+                <div class="sidebar-section">
+                    <h3 class="sidebar-title">⚡ Быстрые действия</h3>
+                    <div class="quick-actions">
+                        <button class="quick-action-btn" onclick="showNotification('Функция в разработке', 'info')">
+                            📱 Мобильное приложение
+                        </button>
+                        <button class="quick-action-btn" onclick="showNotification('Функция в разработке', 'info')">
+                            🗺️ Карта дилеров
+                        </button>
+                        <button class="quick-action-btn" onclick="showNotification('Функция в разработке', 'info')">
+                            📈 Аналитика
+                        </button>
+                    </div>
+                </div>
+            </aside>
+        </main>
+    </div>
+
+    <div id="carsInfo" style="margin-bottom: 1em; font-weight: 500; color: #444;"></div>
+
+    <script>
+        // Global variables
+        let currentTheme = localStorage.getItem('theme') || 'light';
+        let currentLanguage = localStorage.getItem('language') || 'ru';
+        let messageCount = 0;
+        function renderCarCard(car) {
+    const brand = (car.mark || car.brand || '').trim();
+    const model = (car.model || '').trim();
+    const year = car.manufacture_year || car.year || '';
+    const price = car.price ? (car.price / 1000000).toFixed(1) : '';
+    const color = car.color || '';
+    const city = car.city || '';
+    const url = car.url || '';
+    const isUsed = typeof car.is_used !== 'undefined' ? car.is_used : null;
+    const status = isUsed === true ? 'Поддержанный' : (isUsed === false ? 'Новый' : '');
+    const statusColor = isUsed === true ? '#fbbf24' : (isUsed === false ? '#34d399' : '#e5e7eb');
+    const statusTextColor = isUsed === true ? '#7c4700' : (isUsed === false ? '#065f46' : '#374151');
+    return `
+    <div class="car-card-block" style="background:#fff;border-radius:14px;box-shadow:0 2px 8px #e0e7ef;padding:18px 22px;margin-bottom:18px;">
+        <h3 style="color: #374151; margin: 10px 0 6px 0; font-size: 16px; font-weight: 600;">
+            <span class="car-link" style="cursor:pointer;color:#667eea;text-decoration:underline;font-weight:600;" onclick="showCarDetails(${car.id}, ${isUsed})">${brand} ${model} ${year}</span>
+        </h3>
+        <span style="display:inline-block;padding:2px 8px;border-radius:8px;font-size:12px;font-weight:600;background:${statusColor};color:${statusTextColor};margin-bottom:4px;">${status}</span><br>
+        ${price ? `💰 <strong style='font-weight: 600; color: #059669;'>Цена:</strong> ${price} млн ₽<br>` : ''}
+        ${city ? `📍 <strong style='font-weight: 600; color: #059669;'>Город:</strong> ${city}<br>` : ''}
+        ${color ? `🎨 <strong style='font-weight: 600; color: #059669;'>Цвет:</strong> ${color}<br>` : ''}
+        ${url ? `<a href="${url}" target="_blank" class="car-link-button" style="margin-top:8px;display:inline-block;"><i class="fas fa-external-link-alt"></i> Перейти к авто</a>` : ''}
+    </div>
+    `;
+}
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            applyTheme();
+            loadStatistics();
+            autoResizeTextarea();
+        });
+
+        // Theme management
+        function toggleTheme() {
+            currentTheme = currentTheme === 'light' ? 'dark' : 'light';
+            localStorage.setItem('theme', currentTheme);
+            applyTheme();
+        }
+
+        function applyTheme() {
+            document.documentElement.setAttribute('data-theme', currentTheme);
+            const themeToggle = document.querySelector('.theme-toggle');
+            themeToggle.innerHTML = currentTheme === 'light' ? '🌙' : '☀️';
+        }
+
+        // Language management
+        function toggleLanguage() {
+            currentLanguage = currentLanguage === 'ru' ? 'en' : 'ru';
+            localStorage.setItem('language', currentLanguage);
+            const langToggle = document.querySelector('.language-toggle');
+            langToggle.innerHTML = currentLanguage === 'ru' ? '🇷🇺' : '🇺🇸';
+            // Here you would implement language switching logic
+        }
+
+        // Message handling
+        function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            addMessage(message, 'user');
+            input.value = '';
+            autoResizeTextarea();
+            
+            // Show typing indicator
+            showTypingIndicator();
+            
+            // Send to API
+            fetch('/api/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    user_id: 'user_' + Date.now(),
+                    message: message
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                hideTypingIndicator();
+                
+                // Обработка разных типов ответов
+                if (data.success) {
+                    if (typeof data.response === 'string') {
+                        addMessage(data.response, 'assistant');
+                    } else if (data.response && data.response.type === 'electric_vehicles') {
+                        addMessage(data.response.message, 'assistant');
+                    } else if (data.response && data.response.type === 'location_based') {
+                        addMessage(data.response.message, 'assistant');
+                    } else if (data.response && data.response.type === 'llama_response') {
+                        addMessage(data.response.message, 'assistant');
+                    } else if (data.response && data.response.type === 'statistics') {
+                        addMessage(data.response.message, 'assistant');
+                    } else if (data.response && data.response.type === 'options') {
+                        addMessage(data.response.message, 'assistant');
+                    } else if (data.response && data.response.type === 'color_cars') {
+                        addMessage(data.response.message, 'assistant');
+                    } else if (data.response && data.response.type === 'fast_cars') {
+                        addMessage(data.response.message, 'assistant');
+                    } else if (data.response && data.response.type === 'car_list') {
+                        addMessage(data.response.message, 'assistant');
+                    } else {
+                        // Для неизвестных типов выводим сообщение или fallback
+                        const message = data.response.message || data.response || 'Получен ответ от системы';
+                        addMessage(message, 'assistant');
+                    }
+                } else {
+                    addMessage('Ошибка: ' + (data.error || 'Неизвестная ошибка'), 'assistant');
+                }
+                
+                messageCount++;
+                updateMessageCount();
+            })
+            .catch(error => {
+                hideTypingIndicator();
+                addMessage('Извините, произошла ошибка. Попробуйте еще раз.', 'assistant');
+                console.error('Error:', error);
+            });
+        }
+
+        function sendQuickMessage(message) {
+            const input = document.getElementById('messageInput');
+            input.value = message;
+            sendMessage();
+        }
+
+        function addMessage(text, sender) {
+            const messagesContainer = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}`;
+            
+            const avatar = sender === 'user' ? '👤' : '🤖';
+            
+            messageDiv.innerHTML = `
+                <div class="message-avatar">${avatar}</div>
+                <div class="message-content">${text}</div>
+            `;
+            
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function showTypingIndicator() {
+            const messagesContainer = document.getElementById('chatMessages');
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'message assistant';
+            typingDiv.id = 'typingIndicator';
+            
+            typingDiv.innerHTML = `
+                <div class="message-avatar">🤖</div>
+                <div class="typing-indicator">
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                </div>
+            `;
+            
+            messagesContainer.appendChild(typingDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function hideTypingIndicator() {
+            const typingIndicator = document.getElementById('typingIndicator');
+            if (typingIndicator) {
+                typingIndicator.remove();
+            }
+        }
+
+        // Statistics
+        function loadStatistics() {
+            fetch('/api/statistics')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('totalCars').textContent = data.total_cars || 0;
+                    document.getElementById('totalDealers').textContent = data.total_dealers || 0;
+                    document.getElementById('avgPrice').textContent = data.average_price ? 
+                        (data.average_price / 1000000).toFixed(1) + 'M' : '-';
+                })
+                .catch(error => {
+                    console.error('Error loading statistics:', error);
+                });
+        }
+
+        function updateMessageCount() {
+            document.getElementById('totalQueries').textContent = messageCount;
+        }
+
+        // Search functionality
+        function searchCars() {
+            const brand = document.getElementById('brandFilter').value;
+            const price = document.getElementById('priceFilter').value;
+            const year = document.getElementById('yearFilter').value;
+            
+            let query = 'найти';
+            if (brand) query += ` ${brand}`;
+            if (price) query += ` до ${price} рублей`;
+            if (year) query += ` от ${year} года`;
+            
+            sendQuickMessage(query);
+        }
+
+        // Utility functions
+        function handleKeyDown(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendMessage();
+            }
+        }
+
+        function autoResizeTextarea() {
+            const textarea = document.getElementById('messageInput');
+            textarea.style.height = 'auto';
+            textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
+        }
+
+        function showNotification(message, type = 'success') {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+
+        // Auto-resize textarea on input
+        document.getElementById('messageInput').addEventListener('input', autoResizeTextarea);
+
+        function resetFilters() {
+            document.getElementById('brandFilter').value = '';
+            document.getElementById('priceFilter').value = '';
+            document.getElementById('yearFilter').value = '';
+            showNotification('Фильтры сброшены', 'success');
+        }
+    </script>
+</body>
+</html> 
+ 
+ 
+ 
+ 
+ 

@@ -1,0 +1,1604 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Панель управления - Автоассистент</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- <link href="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.css" rel="stylesheet"> -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #667eea;
+            --secondary-color: #764ba2;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --dark-color: #1f2937;
+            --light-color: #f8fafc;
+            --border-color: #e5e7eb;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--light-color);
+            color: var(--dark-color);
+            line-height: 1.6;
+        }
+
+        .dashboard {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Боковая панель */
+        .sidebar {
+            width: 280px;
+            background: white;
+            box-shadow: var(--shadow-lg);
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            z-index: 1000;
+        }
+
+        .sidebar-header {
+            padding: 2rem;
+            border-bottom: 1px solid var(--border-color);
+            text-align: center;
+        }
+
+        .sidebar-header h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .sidebar-header p {
+            color: #6b7280;
+            font-size: 0.875rem;
+        }
+
+        .nav-menu {
+            padding: 1rem 0;
+        }
+
+        .nav-item {
+            display: block;
+            padding: 0.75rem 2rem;
+            color: var(--dark-color);
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border-left: 3px solid transparent;
+        }
+
+        .nav-item:hover,
+        .nav-item.active {
+            background: #f3f4f6;
+            color: var(--primary-color);
+            border-left-color: var(--primary-color);
+        }
+
+        .nav-item i {
+            width: 20px;
+            margin-right: 0.75rem;
+        }
+
+        /* Основной контент */
+        .main-content {
+            flex: 1;
+            margin-left: 280px;
+            padding: 2rem;
+        }
+
+        .page-header {
+            margin-bottom: 2rem;
+        }
+
+        .page-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .page-subtitle {
+            color: #6b7280;
+            font-size: 1rem;
+        }
+
+        /* Карточки статистики */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border-color);
+        }
+
+        .stat-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+
+        .stat-title {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .stat-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            color: white;
+        }
+
+        .stat-icon.primary { background: var(--primary-color); }
+        .stat-icon.success { background: var(--success-color); }
+        .stat-icon.warning { background: var(--warning-color); }
+        .stat-icon.danger { background: var(--danger-color); }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-change {
+            font-size: 0.875rem;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .stat-change.positive {
+            color: var(--success-color);
+        }
+
+        .stat-change.negative {
+            color: var(--danger-color);
+        }
+
+        /* Графики */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .chart-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border-color);
+        }
+
+        .chart-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+
+        .chart-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+
+        /* Таблицы */
+        .table-card {
+            background: white;
+            border-radius: 0.75rem;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+        }
+
+        .table-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .table-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .table th,
+        .table td {
+            padding: 1rem 1.5rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .table th {
+            background: #f9fafb;
+            font-weight: 600;
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #6b7280;
+        }
+
+        .table tbody tr:hover {
+            background: #f9fafb;
+        }
+
+        /* Кнопки */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5a67d8;
+        }
+
+        .btn-success {
+            background: var(--success-color);
+            color: white;
+        }
+
+        .btn-warning {
+            background: var(--warning-color);
+            color: white;
+        }
+
+        .btn-danger {
+            background: var(--danger-color);
+            color: white;
+        }
+
+        /* Формы */
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--dark-color);
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        /* Адаптивность */
+        @media (max-width: 1024px) {
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .main-content {
+                padding: 1rem;
+            }
+        }
+
+        /* Анимации */
+        .fade-in {
+            animation: fadeIn 0.5s cubic-bezier(.4,2,.6,1);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: none; }
+        }
+
+        /* Уведомления */
+        .notification {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            padding: 1rem 1.5rem;
+            border-radius: 0.5rem;
+            color: white;
+            font-weight: 500;
+            z-index: 1001;
+            animation: slideIn 0.3s ease;
+        }
+
+        .notification.success {
+            background: var(--success-color);
+        }
+
+        .notification.error {
+            background: var(--danger-color);
+        }
+
+        .notification.warning {
+            background: var(--warning-color);
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .pagination-fade-in {
+            animation: fadeIn 0.5s cubic-bezier(.4,2,.6,1);
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <!-- Боковая панель -->
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h1><i class="fas fa-car"></i> Автоассистент</h1>
+                <p>Панель управления</p>
+            </div>
+            <nav class="nav-menu">
+                <a href="#overview" class="nav-item active" onclick="showSection('overview')">
+                    <i class="fas fa-chart-line"></i> Обзор
+                </a>
+                <a href="#cars" class="nav-item" onclick="showSection('cars')">
+                    <i class="fas fa-car"></i> Автомобили
+                </a>
+                <a href="#dealers" class="nav-item" onclick="showSection('dealers')">
+                    <i class="fas fa-building"></i> Дилерские центры
+                </a>
+                <a href="#users" class="nav-item" onclick="showSection('users')">
+                    <i class="fas fa-users"></i> Пользователи
+                </a>
+                <a href="#analytics" class="nav-item" onclick="showSection('analytics')">
+                    <i class="fas fa-chart-bar"></i> Аналитика
+                </a>
+                <a href="#settings" class="nav-item" onclick="showSection('settings')">
+                    <i class="fas fa-cog"></i> Настройки
+                </a>
+            </nav>
+        </div>
+
+        <!-- Основной контент -->
+        <div class="main-content">
+            <!-- Обзор -->
+            <div id="overview" class="section active">
+                <div class="page-header">
+                    <h1 class="page-title">Обзор системы</h1>
+                    <p class="page-subtitle">Статистика и ключевые показатели</p>
+                </div>
+
+                <!-- Статистика -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <span class="stat-title">Всего автомобилей</span>
+                            <div class="stat-icon primary">
+                                <i class="fas fa-car"></i>
+                            </div>
+                        </div>
+                        <div class="stat-value" id="totalCars">0</div>
+                        <div class="stat-change positive">
+                            <i class="fas fa-arrow-up"></i>
+                            <span>+12% за месяц</span>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <span class="stat-title">Дилерских центров</span>
+                            <div class="stat-icon success">
+                                <i class="fas fa-building"></i>
+                            </div>
+                        </div>
+                        <div class="stat-value" id="totalDealers">0</div>
+                        <div class="stat-change positive">
+                            <i class="fas fa-arrow-up"></i>
+                            <span>+5% за месяц</span>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <span class="stat-title">Активных пользователей</span>
+                            <div class="stat-icon warning">
+                                <i class="fas fa-users"></i>
+                            </div>
+                        </div>
+                        <div class="stat-value" id="activeUsers">0</div>
+                        <div class="stat-change positive">
+                            <i class="fas fa-arrow-up"></i>
+                            <span>+8% за неделю</span>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <span class="stat-title">Средняя цена</span>
+                            <div class="stat-icon danger">
+                                <i class="fas fa-ruble-sign"></i>
+                            </div>
+                        </div>
+                        <div class="stat-value" id="avgPrice">0</div>
+                        <div class="stat-change negative">
+                            <i class="fas fa-arrow-down"></i>
+                            <span>-3% за месяц</span>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <span class="stat-title">Уникальных дилеров в авто</span>
+                            <div class="stat-icon success">
+                                <i class="fas fa-building"></i>
+                            </div>
+                        </div>
+                        <div class="stat-value" id="uniqueDealersInCars">0</div>
+                        <div class="stat-change positive">
+                            <i class="fas fa-arrow-up"></i>
+                            <span>по данным авто</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Быстрые сценарии -->
+                <div class="quick-scenarios" style="margin: 2rem 0;">
+                    <h3><i class="fas fa-bolt"></i> Быстрые сценарии</h3>
+                    <div id="quickScenarios" style="display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 1rem;"></div>
+                </div>
+
+                <!-- Статистика качества Llama-ответов -->
+                <div class="stat-card" style="margin-bottom:2rem;">
+                    <div class="stat-header">
+                        <span class="stat-title">Качество AI-ответов (Llama)</span>
+                        <div class="stat-icon primary">
+                            <i class="fas fa-robot"></i>
+                        </div>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:2rem;">
+                        <div>
+                            <div class="stat-value" id="llamaAvgScore">0.0</div>
+                            <div class="stat-change">
+                                <span>Средний балл за 7 дней</span>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="stat-value" id="llamaFeedbackCount">0</div>
+                            <div class="stat-change">
+                                <span>Оценок</span>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="stat-value" id="llamaScoreRange">0-0</div>
+                            <div class="stat-change">
+                                <span>Диапазон</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Фильтр по периоду для Llama-аналитики -->
+                <div style="margin-bottom:1rem;display:flex;gap:1rem;align-items:center;">
+                    <label for="llamaPeriodSelect"><b>Период анализа:</b></label>
+                    <select id="llamaPeriodSelect" style="padding:0.5rem 1rem;border-radius:0.5rem;">
+                        <option value="7">7 дней</option>
+                        <option value="14" selected>14 дней</option>
+                        <option value="30">30 дней</option>
+                    </select>
+                    <label for="llamaMinScoreSelect"><b>Мин. оценка:</b></label>
+                    <select id="llamaMinScoreSelect" style="padding:0.5rem 1rem;border-radius:0.5rem;">
+                        <option value="1">1+</option>
+                        <option value="2">2+</option>
+                        <option value="3" selected>3+</option>
+                        <option value="4">4+</option>
+                        <option value="5">5</option>
+                    </select>
+                </div>
+
+                <!-- График динамики качества Llama-ответов -->
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3 class="chart-title">Динамика качества AI-ответов (Llama)</h3>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="llamaTrendChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Последние комментарии по Llama-ответам -->
+                <div class="table-card" style="margin-top:2rem;">
+                    <div class="table-header">
+                        <h3 class="table-title">Последние отзывы пользователей на AI-ответы</h3>
+                    </div>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Дата</th>
+                                <th>Пользователь</th>
+                                <th>Оценка</th>
+                                <th>Комментарий</th>
+                                <th>Запрос</th>
+                                <th>Ответ Llama</th>
+                            </tr>
+                        </thead>
+                        <tbody id="llamaCommentsTable">
+                            <!-- Данные будут загружены динамически -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Графики -->
+                <div class="charts-grid">
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3 class="chart-title">Продажи по месяцам</h3>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="salesChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3 class="chart-title">Популярные марки</h3>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="brandsChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Последние автомобили -->
+                <div class="table-card">
+                    <div class="table-header">
+                        <h3 class="table-title">Последние добавленные автомобили</h3>
+                    </div>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Марка</th>
+                                <th>Модель</th>
+                                <th>Год</th>
+                                <th>Цена</th>
+                                <th>Дилер</th>
+                                <th>Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recentCarsTable">
+                            <!-- Данные будут загружены динамически -->
+                        </tbody>
+                    </table>
+                    <div id="recentCarsPagination" style="margin-top:1em;display:flex;gap:0.5em;"></div>
+                </div>
+            </div>
+
+            <!-- Автомобили -->
+            <div id="cars" class="section">
+                <div class="page-header">
+                    <h1 class="page-title">Управление автомобилями</h1>
+                    <p class="page-subtitle">Добавление, редактирование и удаление автомобилей</p>
+                </div>
+
+                <div class="table-card">
+                    <div class="table-header">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <h3 class="table-title">Все автомобили</h3>
+                            <button class="btn btn-primary" onclick="showAddCarModal()">
+                                <i class="fas fa-plus"></i> Добавить автомобиль
+                            </button>
+                        </div>
+                    </div>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Марка</th>
+                                <th>Модель</th>
+                                <th>Год</th>
+                                <th>Цена</th>
+                                <th>Дилер</th>
+                                <th>Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody id="carsTable">
+                            <!-- Данные будут загружены динамически -->
+                        </tbody>
+                    </table>
+                    <div id="carsPagination" style="margin-top:1em;display:flex;gap:0.5em;"></div>
+                </div>
+            </div>
+
+            <!-- Дилерские центры -->
+            <div id="dealers" class="section">
+                <div class="page-header">
+                    <h1 class="page-title">Дилерские центры</h1>
+                    <p class="page-subtitle">Управление дилерскими центрами</p>
+                </div>
+
+                <div class="table-card">
+                    <div class="table-header">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <h3 class="table-title">Все дилерские центры</h3>
+                            <button class="btn btn-primary" onclick="showAddDealerModal()">
+                                <i class="fas fa-plus"></i> Добавить дилерский центр
+                            </button>
+                        </div>
+                    </div>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Название</th>
+                                <th>Адрес</th>
+                                <th>Телефон</th>
+                                <th>Координаты</th>
+                                <th>Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dealersTable">
+                            <!-- Данные будут загружены динамически -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Пользователи -->
+            <div id="users" class="section">
+                <div class="page-header">
+                    <h1 class="page-title">Пользователи</h1>
+                    <p class="page-subtitle">Аналитика пользователей</p>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <span class="stat-title">Всего пользователей</span>
+                            <div class="stat-icon primary">
+                                <i class="fas fa-users"></i>
+                            </div>
+                        </div>
+                        <div class="stat-value" id="totalUsers">0</div>
+                        <div class="stat-change positive">
+                            <i class="fas fa-arrow-up"></i>
+                            <span>+15% за месяц</span>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <span class="stat-title">Активные сессии</span>
+                            <div class="stat-icon success">
+                                <i class="fas fa-user-check"></i>
+                            </div>
+                        </div>
+                        <div class="stat-value" id="activeSessions">0</div>
+                        <div class="stat-change positive">
+                            <i class="fas fa-arrow-up"></i>
+                            <span>+8% за день</span>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <span class="stat-title">Новые пользователи</span>
+                            <div class="stat-icon warning">
+                                <i class="fas fa-user-plus"></i>
+                            </div>
+                        </div>
+                        <div class="stat-value" id="newUsers">0</div>
+                        <div class="stat-change positive">
+                            <i class="fas fa-arrow-up"></i>
+                            <span>+12% за неделю</span>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <span class="stat-title">Среднее время сессии</span>
+                            <div class="stat-icon danger">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                        </div>
+                        <div class="stat-value" id="avgSessionTime">0</div>
+                        <div class="stat-change positive">
+                            <i class="fas fa-arrow-up"></i>
+                            <span>+5% за месяц</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Аналитика -->
+            <div id="analytics" class="section">
+                <div class="page-header">
+                    <h1 class="page-title">Аналитика</h1>
+                    <p class="page-subtitle">Подробная аналитика и отчеты</p>
+                </div>
+
+                <div class="charts-grid">
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3 class="chart-title">Тренды поиска</h3>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="searchTrendsChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3 class="chart-title">География запросов</h3>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="geoChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Настройки -->
+            <div id="settings" class="section">
+                <div class="page-header">
+                    <h1 class="page-title">Настройки системы</h1>
+                    <p class="page-subtitle">Конфигурация и параметры</p>
+                </div>
+
+                <div class="chart-card">
+                    <h3>Основные настройки</h3>
+                    <form id="settingsForm">
+                        <div class="form-group">
+                            <label class="form-label">Название системы</label>
+                            <input type="text" class="form-input" value="Автоассистент" id="systemName">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Описание</label>
+                            <input type="text" class="form-input" value="Умный помощник по выбору автомобиля" id="systemDescription">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Версия API</label>
+                            <input type="text" class="form-input" value="1.0" id="apiVersion">
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Сохранить настройки
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно -->
+    <div id="modalOverlay" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.3);z-index:2000;align-items:center;justify-content:center;">
+        <div id="modalWindow" style="background:white;padding:2rem;border-radius:1rem;min-width:320px;max-width:90vw;max-height:90vh;overflow:auto;position:relative;">
+            <button onclick="closeModal()" style="position:absolute;top:1rem;right:1rem;background:none;border:none;font-size:1.5rem;cursor:pointer;">&times;</button>
+            <div id="modalTitle" style="font-size:1.2rem;font-weight:600;margin-bottom:1rem;"></div>
+            <div id="modalContent"></div>
+        </div>
+    </div>
+
+    <script>
+        // Глобальные переменные
+        let currentSection = 'overview';
+        let charts = {};
+        let carsPagination = {
+            page: 1,
+            perPage: 25,
+            cars: [],
+            total: 0
+        };
+        let recentCarsPagination = {
+            page: 1,
+            perPage: 5,
+            cars: [],
+            total: 0
+        };
+
+        // Инициализация
+        document.addEventListener('DOMContentLoaded', function() {
+            loadDashboardData();
+            initializeCharts();
+            setupEventListeners();
+            loadQuickScenarios();
+        });
+
+        // Загрузка данных дашборда
+        async function loadDashboardData() {
+            try {
+                // Загружаем статистику
+                const statsResponse = await fetch('/api/statistics');
+                const stats = await statsResponse.json();
+                document.getElementById('totalCars').textContent = stats.total_cars || 0;
+                document.getElementById('totalDealers').textContent = stats.total_dealers || 0;
+                document.getElementById('activeUsers').textContent = stats.total_users || 0;
+                document.getElementById('avgPrice').textContent = stats.average_price ? (stats.average_price / 1000000).toFixed(1) + 'M' : '0M';
+                document.getElementById('uniqueDealersInCars').textContent = stats.total_dealer_centers_in_cars || 0;
+
+                // Загружаем последние автомобили
+                const carsResponse = await fetch('/api/cars?limit=5');
+                const carsData = await carsResponse.json();
+                const cars = carsData.cars || [];
+                recentCarsPagination.cars = cars;
+                recentCarsPagination.total = cars.length;
+                recentCarsPagination.page = 1;
+                renderRecentCarsTablePage();
+
+                // Загружаем все автомобили
+                const allCarsResponse = await fetch('/api/cars');
+                const allCarsData = await allCarsResponse.json();
+                const allCars = allCarsData.cars || [];
+                carsPagination.cars = allCars;
+                carsPagination.total = allCars.length;
+                carsPagination.page = 1;
+                renderCarsTablePage();
+
+                // Загружаем дилерские центры
+                const dealersResponse = await fetch('/api/dealers');
+                const dealersData = await dealersResponse.json();
+                const dealers = dealersData.dealers || [];
+                populateDealersTable(dealers);
+
+            } catch (error) {
+                console.error('Ошибка загрузки данных:', error);
+                showNotification('Ошибка загрузки данных', 'error');
+            }
+        }
+
+        // Инициализация графиков
+        function initializeCharts() {
+            // График продаж
+            const salesCtx = document.getElementById('salesChart').getContext('2d');
+            charts.sales = new Chart(salesCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн'],
+                    datasets: [{
+                        label: 'Продажи',
+                        data: [12, 19, 3, 5, 2, 3],
+                        borderColor: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+
+            // График популярных марок
+            const brandsCtx = document.getElementById('brandsChart').getContext('2d');
+            charts.brands = new Chart(brandsCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['BMW', 'Mercedes', 'Audi', 'Toyota', 'Honda'],
+                    datasets: [{
+                        data: [30, 25, 20, 15, 10],
+                        backgroundColor: [
+                            '#667eea',
+                            '#764ba2',
+                            '#f093fb',
+                            '#f5576c',
+                            '#4facfe'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+
+            // График трендов поиска
+            const trendsCtx = document.getElementById('searchTrendsChart').getContext('2d');
+            charts.trends = new Chart(trendsCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['BMW X5', 'Mercedes GLE', 'Audi Q7', 'Toyota Camry', 'Honda CR-V'],
+                    datasets: [{
+                        label: 'Количество поисков',
+                        data: [65, 59, 80, 81, 56],
+                        backgroundColor: '#667eea'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+
+            // График географии
+            const geoCtx = document.getElementById('geoChart').getContext('2d');
+            charts.geo = new Chart(geoCtx, {
+                type: 'pie',
+                data: {
+                    labels: ['Москва', 'СПб', 'Новосибирск', 'Екатеринбург', 'Другие'],
+                    datasets: [{
+                        data: [40, 25, 15, 12, 8],
+                        backgroundColor: [
+                            '#667eea',
+                            '#764ba2',
+                            '#f093fb',
+                            '#f5576c',
+                            '#4facfe'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+
+            // После инициализации графиков — загрузить реальные данные
+            loadAndUpdateCharts();
+        }
+
+        // Загрузка и обновление графиков с реальными данными
+        async function loadAndUpdateCharts() {
+            try {
+                const response = await fetch('/api/statistics');
+                const data = await response.json();
+                if (!data.success || !data.stats) return;
+
+                // График продаж по годам
+                const years = data.stats.years;
+                charts.sales.data.labels = years.map(y => y.year);
+                charts.sales.data.datasets[0].data = years.map(y => y.count);
+                charts.sales.update();
+
+                // График популярных брендов
+                const brands = data.stats.brands.slice(0, 10); // топ-10
+                charts.brands.data.labels = brands.map(b => b.brand);
+                charts.brands.data.datasets[0].data = brands.map(b => b.count);
+                charts.brands.update();
+
+                // График трендов (средняя цена по брендам)
+                charts.trends.data.labels = brands.map(b => b.brand);
+                charts.trends.data.datasets[0].data = brands.map(b => b.avg_price);
+                charts.trends.update();
+
+                // География (города)
+                const cities = data.stats.cities.slice(0, 10);
+                charts.geo.data.labels = cities.map(c => c.city);
+                charts.geo.data.datasets[0].data = cities.map(c => c.count);
+                charts.geo.update();
+
+            } catch (e) {
+                console.error('Ошибка загрузки аналитики:', e);
+            }
+        }
+
+        // Настройка обработчиков событий
+        function setupEventListeners() {
+            // Обработчик формы настроек
+            document.getElementById('settingsForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                saveSettings();
+            });
+        }
+
+        // Переключение секций
+        function showSection(sectionId) {
+            // Скрываем все секции
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.remove('active');
+            });
+
+            // Показываем нужную секцию
+            document.getElementById(sectionId).classList.add('active');
+
+            // Обновляем активную ссылку в навигации
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            currentSection = sectionId;
+            // Если аналитика — обновить графики
+            if (sectionId === 'analytics') {
+                loadAndUpdateCharts();
+            }
+        }
+
+        // Заполнение таблицы последних автомобилей
+        function populateRecentCarsTable(cars) {
+            const tbody = document.getElementById('recentCarsTable');
+            tbody.innerHTML = '';
+            cars.forEach(car => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${car.brand}</td>
+                    <td>${car.model}</td>
+                    <td>${car.year}</td>
+                    <td>${(car.price / 1000000).toFixed(1)}M ₽</td>
+                    <td>${car.dealer_center}</td>
+                    <td>
+                        <button class="btn btn-info" onclick="showCarOptions(${car.id}, 'recent')">Подробнее</button>
+                        <button class="btn btn-primary" onclick="editCar(${car.id})">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-danger" onclick="deleteCar(${car.id})">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // Заполнение таблицы всех автомобилей
+        function populateCarsTable(cars) {
+            const tbody = document.getElementById('carsTable');
+            tbody.innerHTML = '';
+            cars.forEach(car => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${car.id}</td>
+                    <td>${car.brand}</td>
+                    <td>${car.model}</td>
+                    <td>${car.year}</td>
+                    <td>${(car.price / 1000000).toFixed(1)}M ₽</td>
+                    <td>${car.dealer_center}</td>
+                    <td>
+                        <button class="btn btn-info" onclick="showCarOptions(${car.id}, 'all')">Подробнее</button>
+                        <button class="btn btn-primary" onclick="editCar(${car.id})">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-danger" onclick="deleteCar(${car.id})">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // Заполнение таблицы дилерских центров
+        function populateDealersTable(dealers) {
+            const tbody = document.getElementById('dealersTable');
+            tbody.innerHTML = '';
+
+            dealers.forEach(dealer => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${dealer.id}</td>
+                    <td>${dealer.name}</td>
+                    <td>${dealer.address}</td>
+                    <td>${dealer.phone}</td>
+                    <td>${dealer.latitude}, ${dealer.longitude}</td>
+                    <td>
+                        <button class="btn btn-primary" onclick="editDealer(${dealer.id})">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-danger" onclick="deleteDealer(${dealer.id})">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // Универсальное модальное окно
+        function openModal(title, content) {
+            document.getElementById('modalTitle').textContent = title;
+            document.getElementById('modalContent').innerHTML = content;
+            document.getElementById('modalOverlay').style.display = 'flex';
+        }
+        function closeModal() {
+            document.getElementById('modalOverlay').style.display = 'none';
+        }
+
+        // Динамическая подгрузка дилеров для формы
+        async function loadDealersOptions(selected = '') {
+            try {
+                const resp = await fetch('/api/dealers');
+                const data = await resp.json();
+                const dealers = data.dealers || data || [];
+                return dealers.map(d => `<option value="${d.name}"${d.name===selected?' selected':''}>${d.name}</option>`).join('');
+            } catch {
+                return '<option value="">Ошибка загрузки дилеров</option>';
+            }
+        }
+
+        // Модальная форма для добавления/редактирования авто
+        async function showAddCarModal(car = null) {
+            let dealerOptions = await loadDealersOptions(car?.dealer_center||'');
+            let state = car?.state || 'new';
+            openModal(car ? 'Редактировать автомобиль' : 'Добавить автомобиль', `
+                <form id="carForm" onsubmit="saveCar(event, ${car ? car.id : 'null'})">
+                    <div class="form-group">
+                        <label class="form-label">Марка</label>
+                        <input type="text" class="form-input" name="mark" value="${car?.brand||car?.mark||''}" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Модель</label>
+                        <input type="text" class="form-input" name="model" value="${car?.model||''}" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Год выпуска</label>
+                        <input type="number" class="form-input" name="manufacture_year" value="${car?.year||car?.manufacture_year||''}" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Цена (руб)</label>
+                        <input type="number" class="form-input" name="price" value="${car?.price||''}" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Дилерский центр</label>
+                        <select class="form-input" name="dealer_center" required>${dealerOptions}</select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Состояние</label>
+                        <select class="form-input" name="state">
+                            <option value="new"${state==='new'?' selected':''}>Новый</option>
+                            <option value="used"${state==='used'?' selected':''}>Подержанный</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Пробег (только для подержанных)</label>
+                        <input type="number" class="form-input" name="mileage" value="${car?.mileage||''}">
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> ${car ? 'Обновить' : 'Добавить'}
+                    </button>
+                </form>
+            `);
+        }
+
+        // Сохранение автомобиля (добавление/редактирование)
+        async function saveCar(event, carId = null) {
+            event.preventDefault();
+            const form = event.target;
+            const formData = new FormData(form);
+            const carData = Object.fromEntries(formData.entries());
+            if (!carData.state) carData.state = 'new';
+            if (carData.state === 'new') carData.mileage = 0;
+            try {
+                let resp;
+                if (carId) {
+                    resp = await fetch(`/api/cars/${carId}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(carData)
+                    });
+                } else {
+                    resp = await fetch('/api/cars/create', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(carData)
+                    });
+                }
+                if (resp.ok) {
+                    showNotification('Автомобиль сохранён', 'success');
+                    closeModal();
+                    loadDashboardData();
+                } else {
+                    showNotification('Ошибка сохранения автомобиля', 'error');
+                }
+            } catch (e) {
+                showNotification('Ошибка сохранения автомобиля', 'error');
+            }
+        }
+
+        // Редактирование автомобиля
+        async function editCar(carId) {
+            try {
+                const resp = await fetch(`/api/cars/${carId}`);
+                const data = await resp.json();
+                if (data.success && data.car) {
+                    showAddCarModal(data.car);
+                } else {
+                    showNotification('Автомобиль не найден', 'error');
+                }
+            } catch {
+                showNotification('Ошибка загрузки автомобиля', 'error');
+            }
+        }
+
+        // Удаление автомобиля
+        async function deleteCar(carId) {
+            if (!confirm('Вы уверены, что хотите удалить этот автомобиль?')) return;
+            try {
+                const resp = await fetch(`/api/cars/${carId}`, { method: 'DELETE' });
+                if (resp.ok) {
+                    showNotification('Автомобиль удалён', 'success');
+                    loadDashboardData();
+                } else {
+                    showNotification('Ошибка удаления автомобиля', 'error');
+                }
+            } catch {
+                showNotification('Ошибка удаления автомобиля', 'error');
+            }
+        }
+
+        // Функции для работы с дилерскими центрами
+        function showAddDealerModal() {
+            openModal('Добавить дилерский центр', `
+                <form id="dealerForm" onsubmit="saveDealer(event)">
+                    <div class="form-group">
+                        <label class="form-label">Название</label>
+                        <input type="text" class="form-input" name="name" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Адрес</label>
+                        <input type="text" class="form-input" name="address" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Телефон</label>
+                        <input type="text" class="form-input" name="phone" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Широта</label>
+                        <input type="number" class="form-input" name="latitude" step="any" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Долгота</label>
+                        <input type="number" class="form-input" name="longitude" step="any" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Добавить</button>
+                </form>
+            `);
+        }
+
+        async function saveDealer(event) {
+            event.preventDefault();
+            const form = event.target;
+            const formData = new FormData(form);
+            const dealerData = Object.fromEntries(formData.entries());
+            try {
+                const resp = await fetch('/api/dealers/create', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(dealerData)
+                });
+                if (resp.ok) {
+                    showNotification('Дилерский центр добавлен', 'success');
+                    closeModal();
+                    loadDashboardData();
+                } else {
+                    showNotification('Ошибка добавления дилера', 'error');
+                }
+            } catch {
+                showNotification('Ошибка добавления дилера', 'error');
+            }
+        }
+
+        function editDealer(dealerId) {
+            showNotification(`Редактирование дилерского центра ${dealerId}`, 'warning');
+        }
+
+        function deleteDealer(dealerId) {
+            if (confirm('Вы уверены, что хотите удалить этот дилерский центр?')) {
+                showNotification(`Дилерский центр ${dealerId} удален`, 'success');
+            }
+        }
+
+        // Сохранение настроек
+        function saveSettings() {
+            const settings = {
+                systemName: document.getElementById('systemName').value,
+                systemDescription: document.getElementById('systemDescription').value,
+                apiVersion: document.getElementById('apiVersion').value
+            };
+
+            // Здесь можно отправить настройки на сервер
+            console.log('Сохранение настроек:', settings);
+            showNotification('Настройки сохранены', 'success');
+        }
+
+        // Показать уведомление
+        function showNotification(message, type = 'success') {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+
+        // Обновление данных каждые 30 секунд
+        setInterval(loadDashboardData, 30000);
+
+        // Загрузка быстрых сценариев
+        async function loadQuickScenarios() {
+            const container = document.getElementById('quickScenarios');
+            container.innerHTML = '<span style="color:#888;">Загрузка...</span>';
+            try {
+                const resp = await fetch('/api/quick-scenarios');
+                const data = await resp.json();
+                container.innerHTML = '';
+                if (data.success && data.scenarios && data.scenarios.length > 0) {
+                    data.scenarios.forEach(scenario => {
+                        const btn = document.createElement('button');
+                        btn.className = 'btn btn-light';
+                        btn.style.border = '1px solid #e5e7eb';
+                        btn.style.background = '#fff';
+                        btn.style.fontWeight = '500';
+                        btn.style.fontSize = '1rem';
+                        btn.style.display = 'flex';
+                        btn.style.alignItems = 'center';
+                        btn.style.gap = '0.5rem';
+                        btn.innerHTML = `<span>${scenario.icon || ''}</span> ${scenario.title}`;
+                        btn.onclick = () => {
+                            // Можно отправить запрос в чат или открыть фильтр
+                            alert('Сценарий: ' + scenario.query);
+                        };
+                        container.appendChild(btn);
+                    });
+                } else {
+                    container.innerHTML = '<span style="color:#888;">Нет доступных сценариев</span>';
+                }
+            } catch (e) {
+                container.innerHTML = '<span style="color:#e53e3e;">Ошибка загрузки сценариев</span>';
+            }
+        }
+
+        function renderCarsTablePage() {
+            const start = (carsPagination.page - 1) * carsPagination.perPage;
+            const end = start + carsPagination.perPage;
+            const cars = carsPagination.cars.slice(start, end);
+            const tbody = document.getElementById('carsTable');
+            tbody.classList.remove('fade-in');
+            populateCarsTable(cars);
+            void tbody.offsetWidth; // reflow
+            tbody.classList.add('fade-in');
+            renderCarsPaginationControls();
+        }
+        function renderCarsPaginationControls() {
+            const pag = document.getElementById('carsPagination');
+            pag.innerHTML = '';
+            const totalPages = Math.ceil(carsPagination.total / carsPagination.perPage);
+            const maxVisible = 7;
+            const page = carsPagination.page;
+            // Кнопка "Назад"
+            const prevBtn = document.createElement('button');
+            prevBtn.className = 'btn btn-sm btn-light pagination-fade-in';
+            prevBtn.textContent = 'Назад';
+            prevBtn.disabled = page === 1;
+            prevBtn.onclick = () => changeCarsPage(-1);
+            pag.appendChild(prevBtn);
+            // Крайняя левая
+            if (totalPages > maxVisible && page > 4) {
+                addPageBtn(1);
+                if (page > 5) addDots(pag);
+            }
+            // Основные страницы
+            let start = Math.max(1, page - 3);
+            let end = Math.min(totalPages, page + 3);
+            if (page <= 4) end = Math.min(totalPages, maxVisible);
+            if (page > totalPages - 4) start = Math.max(1, totalPages - maxVisible + 1);
+            for (let i = start; i <= end; ++i) addPageBtn(i);
+            // Крайняя правая
+            if (totalPages > maxVisible && page < totalPages - 3) {
+                if (page < totalPages - 4) addDots(pag);
+                addPageBtn(totalPages);
+            }
+            // Кнопка "Вперёд"
+            const nextBtn = document.createElement('button');
+            nextBtn.className = 'btn btn-sm btn-light pagination-fade-in';
+            nextBtn.textContent = 'Вперёд';
+            nextBtn.disabled = page === totalPages;
+            nextBtn.onclick = () => changeCarsPage(1);
+            pag.appendChild(nextBtn);
+            // Триггерим анимацию повторно при каждом обновлении
+            setTimeout(() => {
+                pag.querySelectorAll('button').forEach(btn => {
+                    btn.classList.remove('pagination-fade-in');
+                    void btn.offsetWidth;
+                    btn.classList.add('pagination-fade-in');
+                });
+            }, 10);
+            function addPageBtn(i) {
+                const btn = document.createElement('button');
+                btn.className = 'btn btn-sm' + (i === page ? ' btn-primary' : ' btn-light') + ' pagination-fade-in';
+                btn.textContent = i;
+                btn.onclick = () => { carsPagination.page = i; renderCarsTablePage(); };
+                pag.appendChild(btn);
+            }
+            function addDots(pag) {
+                const span = document.createElement('span');
+                span.textContent = '...';
+                span.style.cssText = 'padding:0 6px;color:#888;user-select:none;';
+                pag.appendChild(span);
+            }
+        }
+        function changeCarsPage(delta) {
+            const totalPages = Math.ceil(carsPagination.total / carsPagination.perPage);
+            carsPagination.page = Math.max(1, Math.min(totalPages, carsPagination.page + delta));
+            renderCarsTablePage();
+        }
+
+        function renderRecentCarsTablePage() {
+            const start = (recentCarsPagination.page - 1) * recentCarsPagination.perPage;
+            const end = start + recentCarsPagination.perPage;
+            const cars = recentCarsPagination.cars.slice(start, end);
+            const tbody = document.getElementById('recentCarsTable');
+            tbody.classList.remove('fade-in');
+            populateRecentCarsTable(cars);
+            void tbody.offsetWidth; // reflow
+            tbody.classList.add('fade-in');
+            renderRecentCarsPaginationControls();
+        }
+        function renderRecentCarsPaginationControls() {
+            const pag = document.getElementById('recentCarsPagination');
+            pag.innerHTML = '';
+            const totalPages = Math.ceil(recentCarsPagination.total / recentCarsPagination.perPage);
+            const maxVisible = 7;
+            const page = recentCarsPagination.page;
+            // Кнопка "Назад"
+            const prevBtn = document.createElement('button');
+            prevBtn.className = 'btn btn-sm btn-light pagination-fade-in';
+            prevBtn.textContent = 'Назад';
+            prevBtn.disabled = page === 1;
+            prevBtn.onclick = () => changeRecentCarsPage(-1);
+            pag.appendChild(prevBtn);
+            // Крайняя левая
+            if (totalPages > maxVisible && page > 4) {
+                addPageBtn(1);
+                if (page > 5) addDots(pag);
+            }
+            // Основные страницы
+            let start = Math.max(1, page - 3);
+            let end = Math.min(totalPages, page + 3);
+            if (page <= 4) end = Math.min(totalPages, maxVisible);
+            if (page > totalPages - 4) start = Math.max(1, totalPages - maxVisible + 1);
+            for (let i = start; i <= end; ++i) addPageBtn(i);
+            // Крайняя правая
+            if (totalPages > maxVisible && page < totalPages - 3) {
+                if (page < totalPages - 4) addDots(pag);
+                addPageBtn(totalPages);
+            }
+            // Кнопка "Вперёд"
+            const nextBtn = document.createElement('button');
+            nextBtn.className = 'btn btn-sm btn-light pagination-fade-in';
+            nextBtn.textContent = 'Вперёд';
+            nextBtn.disabled = page === totalPages;
+            nextBtn.onclick = () => changeRecentCarsPage(1);
+            pag.appendChild(nextBtn);
+            setTimeout(() => {
+                pag.querySelectorAll('button').forEach(btn => {
+                    btn.classList.remove('pagination-fade-in');
+                    void btn.offsetWidth;
+                    btn.classList.add('pagination-fade-in');
+                });
+            }, 10);
+            function addPageBtn(i) {
+                const btn = document.createElement('button');
+                btn.className = 'btn btn-sm' + (i === page ? ' btn-primary' : ' btn-light') + ' pagination-fade-in';
+                btn.textContent = i;
+                btn.onclick = () => { recentCarsPagination.page = i; renderRecentCarsTablePage(); };
+                pag.appendChild(btn);
+            }
+            function addDots(pag) {
+                const span = document.createElement('span');
+                span.textContent = '...';
+                span.style.cssText = 'padding:0 6px;color:#888;user-select:none;';
+                pag.appendChild(span);
+            }
+        }
+        function changeRecentCarsPage(delta) {
+            const totalPages = Math.ceil(recentCarsPagination.total / recentCarsPagination.perPage);
+            recentCarsPagination.page = Math.max(1, Math.min(totalPages, recentCarsPagination.page + delta));
+            renderRecentCarsTablePage();
+        }
+
+        function showCarOptions(carId, type) {
+            let car;
+            if (type === 'recent') {
+                car = recentCarsPagination.cars.find(c => c.id === carId);
+            } else {
+                car = carsPagination.cars.find(c => c.id === carId);
+            }
+            if (!car) return showNotification('Автомобиль не найден', 'error');
+            let optionsHtml = '';
+            if (car.options && car.options.length) {
+                optionsHtml = '<ul style="padding-left:1.2em;">' + car.options.map(opt => `<li>${typeof opt === 'object' ? (opt.description || opt.code || JSON.stringify(opt)) : opt}</li>`).join('') + '</ul>';
+            } else {
+                optionsHtml = '<span style="color:#888;">Нет опций</span>';
+            }
+            openModal('Опции автомобиля', optionsHtml);
+        }
+    </script>
+</body>
+</html> 
+ 
+ 
+ 
+ 
+ 

@@ -1,0 +1,16 @@
+2025-06-24 18:25:54,865 - AutoAssistant - ERROR - Ошибка получения логов ошибок: no such table: api_logs
+2025-06-24 18:25:54,866 - AutoAssistant - ERROR - Ошибка получения логов API: no such table: api_logs
+2025-06-24 18:25:54,868 - AutoAssistant - ERROR - Ошибка получения логов ошибок: no such table: api_logs
+2025-06-24 18:25:54,869 - AutoAssistant - ERROR - Ошибка расчета среднего времени ответа: no such table: api_logs
+2025-06-24 18:43:12,491 - AutoAssistant - ERROR - Ошибка получения логов ошибок: no such table: api_logs
+2025-06-24 18:43:12,492 - AutoAssistant - ERROR - Ошибка получения логов API: no such table: api_logs
+2025-06-24 18:43:12,492 - AutoAssistant - ERROR - Ошибка получения логов ошибок: no such table: api_logs
+2025-06-24 18:43:12,493 - AutoAssistant - ERROR - Ошибка расчета среднего времени ответа: no such table: api_logs
+2025-06-24 22:01:22,576 - AutoAssistant - ERROR - Ошибка получения логов ошибок: no such table: api_logs
+2025-06-24 22:01:22,576 - AutoAssistant - ERROR - Ошибка получения логов API: no such table: api_logs
+2025-06-24 22:01:22,577 - AutoAssistant - ERROR - Ошибка получения логов ошибок: no such table: api_logs
+2025-06-24 22:01:22,578 - AutoAssistant - ERROR - Ошибка расчета среднего времени ответа: no such table: api_logs
+2025-06-25 20:36:13,212 - AutoAssistant - ERROR - Ошибка получения логов ошибок: no such table: api_logs
+2025-06-25 20:36:13,213 - AutoAssistant - ERROR - Ошибка получения логов API: no such table: api_logs
+2025-06-25 20:36:13,214 - AutoAssistant - ERROR - Ошибка получения логов ошибок: no such table: api_logs
+2025-06-25 20:36:13,214 - AutoAssistant - ERROR - Ошибка расчета среднего времени ответа: no such table: api_logs

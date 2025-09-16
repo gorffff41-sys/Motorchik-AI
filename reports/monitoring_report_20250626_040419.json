@@ -1,0 +1,45 @@
+{
+  "system_stats": {
+    "timestamp": "2025-06-26T04:04:18.678873",
+    "cpu_percent": 7.9,
+    "memory_percent": 35.8,
+    "disk_usage": 99.9,
+    "network_io": {
+      "bytes_sent": 225002229,
+      "bytes_recv": 280220154,
+      "packets_sent": 278235,
+      "packets_recv": 461827
+    },
+    "process_count": 308
+  },
+  "database_stats": {
+    "db_size_mb": 2.14,
+    "table_counts": {
+      "car": 525,
+      "dealer_centers": 0,
+      "user_profiles": 0,
+      "chat_history": 0
+    },
+    "total_queries": 0,
+    "unique_users": 0,
+    "active_days": 0
+  },
+  "performance_metrics": {
+    "avg_response_time_ms": 0,
+    "max_response_time_ms": 0,
+    "min_response_time_ms": 0,
+    "popular_intents": []
+  },
+  "recent_errors": [],
+  "api_activity": {
+    "total_requests_24h": 0,
+    "error_rate_24h": 0,
+    "avg_response_time_24h": 0
+  },
+  "llama_feedback": {
+    "avg_score": 0,
+    "count": 0,
+    "min_score": null,
+    "max_score": null
+  }
+}

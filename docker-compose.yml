@@ -1,0 +1,22 @@
+services:
+  xuy:
+    build: .
+    container_name: xuy
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./instance:/app/instance
+      - ./logs:/app/logs
+      - ./static:/app/static
+      - ./avatar:/app/avatar
+      - ./ml_models:/app/ml_models
+    environment:
+      - PYTHONPATH=/app
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+    networks:
+      - xuy-network
+
+networks:
+  xuy-network:
+    driver: bridge

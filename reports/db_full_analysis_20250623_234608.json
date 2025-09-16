@@ -1,0 +1,2634 @@
+{
+  "timestamp": "2025-06-23T23:46:08.128282",
+  "database_path": "instance\\cars.db",
+  "table_info": {
+    "car": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "not_null": true,
+          "default_value": null,
+          "primary_key": true
+        },
+        {
+          "name": "title",
+          "type": "VARCHAR(100)",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "doc_num",
+          "type": "VARCHAR(50)",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "stock_qty",
+          "type": "INTEGER",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "mark",
+          "type": "VARCHAR(100)",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "model",
+          "type": "VARCHAR(100)",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "code_compl",
+          "type": "VARCHAR(100)",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "vin",
+          "type": "VARCHAR(50)",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "color",
+          "type": "VARCHAR(50)",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "price",
+          "type": "FLOAT",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "city",
+          "type": "VARCHAR(100)",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "manufacture_year",
+          "type": "INTEGER",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "fuel_type",
+          "type": "VARCHAR(50)",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "power",
+          "type": "FLOAT",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "body_type",
+          "type": "VARCHAR(50)",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "gear_box_type",
+          "type": "VARCHAR(50)",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "driving_gear_type",
+          "type": "VARCHAR(50)",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "engine_vol",
+          "type": "INTEGER",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "dealer_center",
+          "type": "VARCHAR(100)",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "is_modern",
+          "type": "INTEGER",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "is_otechestvenny",
+          "type": "INTEGER",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": false
+        }
+      ],
+      "row_count": 523,
+      "table_size_bytes": 7761920,
+      "column_count": 21
+    },
+    "picture": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "not_null": true,
+          "default_value": null,
+          "primary_key": true
+        },
+        {
+          "name": "car_id",
+          "type": "INTEGER",
+          "not_null": true,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "url",
+          "type": "VARCHAR(500)",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "type",
+          "type": "VARCHAR(50)",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "seqno",
+          "type": "INTEGER",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": false
+        }
+      ],
+      "row_count": 8928,
+      "table_size_bytes": 7761920,
+      "column_count": 5
+    },
+    "option": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "not_null": true,
+          "default_value": null,
+          "primary_key": true
+        },
+        {
+          "name": "car_id",
+          "type": "INTEGER",
+          "not_null": true,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "code",
+          "type": "VARCHAR(50)",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "description",
+          "type": "TEXT",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": false
+        }
+      ],
+      "row_count": 11108,
+      "table_size_bytes": 7761920,
+      "column_count": 4
+    },
+    "used_car": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "not_null": true,
+          "default_value": null,
+          "primary_key": true
+        },
+        {
+          "name": "title",
+          "type": "VARCHAR(100)",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "doc_num",
+          "type": "VARCHAR(50)",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "mark",
+          "type": "VARCHAR(100)",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "model",
+          "type": "VARCHAR(100)",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "vin",
+          "type": "VARCHAR(50)",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "color",
+          "type": "VARCHAR(50)",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "price",
+          "type": "FLOAT",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "city",
+          "type": "VARCHAR(100)",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "manufacture_year",
+          "type": "INTEGER",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "mileage",
+          "type": "INTEGER",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "body_type",
+          "type": "VARCHAR(50)",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "gear_box_type",
+          "type": "VARCHAR(50)",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "driving_gear_type",
+          "type": "VARCHAR(50)",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "engine_vol",
+          "type": "INTEGER",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "power",
+          "type": "FLOAT",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "fuel_type",
+          "type": "VARCHAR(50)",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "dealer_center",
+          "type": "VARCHAR(100)",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "is_modern",
+          "type": "INTEGER",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "is_otechestvenny",
+          "type": "INTEGER",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": false
+        }
+      ],
+      "row_count": 1583,
+      "table_size_bytes": 7761920,
+      "column_count": 20
+    },
+    "used_car_picture": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "not_null": true,
+          "default_value": null,
+          "primary_key": true
+        },
+        {
+          "name": "used_car_id",
+          "type": "INTEGER",
+          "not_null": true,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "url",
+          "type": "VARCHAR(500)",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "type",
+          "type": "VARCHAR(50)",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "seqno",
+          "type": "INTEGER",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": false
+        }
+      ],
+      "row_count": 40154,
+      "table_size_bytes": 7761920,
+      "column_count": 5
+    },
+    "cars": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": true
+        },
+        {
+          "name": "mark",
+          "type": "TEXT",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "model",
+          "type": "TEXT",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "year",
+          "type": "INTEGER",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "price",
+          "type": "REAL",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "city",
+          "type": "TEXT",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "description",
+          "type": "TEXT",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": false
+        }
+      ],
+      "row_count": 5,
+      "table_size_bytes": 7761920,
+      "column_count": 7
+    },
+    "sqlite_sequence": {
+      "columns": [
+        {
+          "name": "name",
+          "type": "",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "seq",
+          "type": "",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": false
+        }
+      ],
+      "row_count": 4,
+      "table_size_bytes": 7761920,
+      "column_count": 2
+    },
+    "user_profiles": {
+      "columns": [
+        {
+          "name": "user_id",
+          "type": "TEXT",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": true
+        },
+        {
+          "name": "profile_data",
+          "type": "TEXT",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": false
+        }
+      ],
+      "row_count": 0,
+      "table_size_bytes": 7761920,
+      "column_count": 2
+    },
+    "vin_duplicates": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": true
+        },
+        {
+          "name": "vin",
+          "type": "TEXT",
+          "not_null": true,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "table_name",
+          "type": "TEXT",
+          "not_null": true,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "duplicate_count",
+          "type": "INTEGER",
+          "not_null": false,
+          "default_value": "1",
+          "primary_key": false
+        },
+        {
+          "name": "first_seen",
+          "type": "TIMESTAMP",
+          "not_null": false,
+          "default_value": "CURRENT_TIMESTAMP",
+          "primary_key": false
+        },
+        {
+          "name": "last_seen",
+          "type": "TIMESTAMP",
+          "not_null": false,
+          "default_value": "CURRENT_TIMESTAMP",
+          "primary_key": false
+        }
+      ],
+      "row_count": 0,
+      "table_size_bytes": 7761920,
+      "column_count": 6
+    },
+    "search_statistics": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": true
+        },
+        {
+          "name": "search_term",
+          "type": "TEXT",
+          "not_null": true,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "search_type",
+          "type": "TEXT",
+          "not_null": true,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "results_count",
+          "type": "INTEGER",
+          "not_null": false,
+          "default_value": "0",
+          "primary_key": false
+        },
+        {
+          "name": "search_time_ms",
+          "type": "INTEGER",
+          "not_null": false,
+          "default_value": "0",
+          "primary_key": false
+        },
+        {
+          "name": "created_at",
+          "type": "TIMESTAMP",
+          "not_null": false,
+          "default_value": "CURRENT_TIMESTAMP",
+          "primary_key": false
+        }
+      ],
+      "row_count": 0,
+      "table_size_bytes": 7761920,
+      "column_count": 6
+    },
+    "error_log": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": true
+        },
+        {
+          "name": "error_type",
+          "type": "TEXT",
+          "not_null": true,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "error_message",
+          "type": "TEXT",
+          "not_null": true,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "stack_trace",
+          "type": "TEXT",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "created_at",
+          "type": "TIMESTAMP",
+          "not_null": false,
+          "default_value": "CURRENT_TIMESTAMP",
+          "primary_key": false
+        }
+      ],
+      "row_count": 0,
+      "table_size_bytes": 7761920,
+      "column_count": 5
+    },
+    "query_cache": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": true
+        },
+        {
+          "name": "query_hash",
+          "type": "TEXT",
+          "not_null": true,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "query_text",
+          "type": "TEXT",
+          "not_null": true,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "result_data",
+          "type": "TEXT",
+          "not_null": true,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "created_at",
+          "type": "TIMESTAMP",
+          "not_null": false,
+          "default_value": "CURRENT_TIMESTAMP",
+          "primary_key": false
+        },
+        {
+          "name": "expires_at",
+          "type": "TIMESTAMP",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": false
+        }
+      ],
+      "row_count": 0,
+      "table_size_bytes": 7761920,
+      "column_count": 6
+    },
+    "chat_log": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": true
+        },
+        {
+          "name": "user",
+          "type": "TEXT",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "query_text",
+          "type": "TEXT",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "response",
+          "type": "TEXT",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "created_at",
+          "type": "TIMESTAMP",
+          "not_null": false,
+          "default_value": "CURRENT_TIMESTAMP",
+          "primary_key": false
+        }
+      ],
+      "row_count": 1,
+      "table_size_bytes": 7761920,
+      "column_count": 5
+    },
+    "chat_history": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": true
+        },
+        {
+          "name": "user_id",
+          "type": "TEXT",
+          "not_null": true,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "user_message",
+          "type": "TEXT",
+          "not_null": true,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "bot_response",
+          "type": "TEXT",
+          "not_null": true,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "intent",
+          "type": "TEXT",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "entities",
+          "type": "TEXT",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "used_llm",
+          "type": "BOOLEAN",
+          "not_null": false,
+          "default_value": "FALSE",
+          "primary_key": false
+        },
+        {
+          "name": "quality_score",
+          "type": "REAL",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "timestamp",
+          "type": "DATETIME",
+          "not_null": false,
+          "default_value": "CURRENT_TIMESTAMP",
+          "primary_key": false
+        },
+        {
+          "name": "session_id",
+          "type": "TEXT",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": false
+        }
+      ],
+      "row_count": 13,
+      "table_size_bytes": 7761920,
+      "column_count": 10
+    },
+    "user_queries": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": true
+        },
+        {
+          "name": "user_id",
+          "type": "TEXT",
+          "not_null": true,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "query",
+          "type": "TEXT",
+          "not_null": true,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "response",
+          "type": "TEXT",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "intent",
+          "type": "TEXT",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "entities",
+          "type": "TEXT",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "timestamp",
+          "type": "TIMESTAMP",
+          "not_null": false,
+          "default_value": "CURRENT_TIMESTAMP",
+          "primary_key": false
+        }
+      ],
+      "row_count": 0,
+      "table_size_bytes": 7761920,
+      "column_count": 7
+    },
+    "user_favorites": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": true
+        },
+        {
+          "name": "user_id",
+          "type": "TEXT",
+          "not_null": true,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "brand",
+          "type": "TEXT",
+          "not_null": true,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "model",
+          "type": "TEXT",
+          "not_null": true,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "year",
+          "type": "INTEGER",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "price",
+          "type": "INTEGER",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "dealer_center",
+          "type": "TEXT",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "notes",
+          "type": "TEXT",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "added_at",
+          "type": "TIMESTAMP",
+          "not_null": false,
+          "default_value": "CURRENT_TIMESTAMP",
+          "primary_key": false
+        }
+      ],
+      "row_count": 0,
+      "table_size_bytes": 7761920,
+      "column_count": 9
+    },
+    "user_filters": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": true
+        },
+        {
+          "name": "user_id",
+          "type": "TEXT",
+          "not_null": true,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "filter_name",
+          "type": "TEXT",
+          "not_null": true,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "filter_params",
+          "type": "TEXT",
+          "not_null": true,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "created_at",
+          "type": "TIMESTAMP",
+          "not_null": false,
+          "default_value": "CURRENT_TIMESTAMP",
+          "primary_key": false
+        }
+      ],
+      "row_count": 0,
+      "table_size_bytes": 7761920,
+      "column_count": 5
+    },
+    "user_preferences": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": true
+        },
+        {
+          "name": "user_id",
+          "type": "TEXT",
+          "not_null": true,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "preferred_brands",
+          "type": "TEXT",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "preferred_price_range",
+          "type": "TEXT",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "preferred_body_types",
+          "type": "TEXT",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "preferred_fuel_types",
+          "type": "TEXT",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "preferred_cities",
+          "type": "TEXT",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "updated_at",
+          "type": "TIMESTAMP",
+          "not_null": false,
+          "default_value": "CURRENT_TIMESTAMP",
+          "primary_key": false
+        }
+      ],
+      "row_count": 0,
+      "table_size_bytes": 7761920,
+      "column_count": 8
+    },
+    "dealer_centers": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": true
+        },
+        {
+          "name": "name",
+          "type": "TEXT",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "address",
+          "type": "TEXT",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "city",
+          "type": "TEXT",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "brands",
+          "type": "TEXT",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "website",
+          "type": "TEXT",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "phone",
+          "type": "TEXT",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "working_hours",
+          "type": "TEXT",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "latitude",
+          "type": "REAL",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": false
+        },
+        {
+          "name": "longitude",
+          "type": "REAL",
+          "not_null": false,
+          "default_value": null,
+          "primary_key": false
+        }
+      ],
+      "row_count": 24,
+      "table_size_bytes": 7761920,
+      "column_count": 10
+    }
+  },
+  "data_quality": {
+    "car": {
+      "null_percentage": {
+        "id": 0.0,
+        "title": 0.0,
+        "doc_num": 0.0,
+        "stock_qty": 0.0,
+        "mark": 0.0,
+        "model": 0.0,
+        "code_compl": 0.0,
+        "vin": 0.0,
+        "color": 0.0,
+        "price": 0.0,
+        "city": 0.0,
+        "manufacture_year": 0.0,
+        "fuel_type": 0.0,
+        "power": 0.0,
+        "body_type": 0.0,
+        "gear_box_type": 0.0,
+        "driving_gear_type": 0.0,
+        "engine_vol": 0.0,
+        "dealer_center": 0.0,
+        "is_modern": 0.0,
+        "is_otechestvenny": 79.54110898661568
+      },
+      "unique_values": {
+        "id": 523,
+        "title": 1,
+        "doc_num": 520,
+        "stock_qty": 6,
+        "mark": 16,
+        "model": 66,
+        "code_compl": 181,
+        "vin": 523,
+        "color": 112,
+        "price": 327,
+        "city": 3,
+        "manufacture_year": 5,
+        "fuel_type": 4,
+        "power": 40,
+        "body_type": 10,
+        "gear_box_type": 3,
+        "driving_gear_type": 3,
+        "engine_vol": 21,
+        "dealer_center": 1,
+        "is_modern": 2,
+        "is_otechestvenny": 1
+      },
+      "data_types": {
+        "id": {
+          "type": "INTEGER",
+          "min": 1,
+          "max": 525,
+          "avg": 263.4321223709369
+        },
+        "stock_qty": {
+          "type": "INTEGER",
+          "min": 1,
+          "max": 9,
+          "avg": 1.3040152963671128
+        },
+        "manufacture_year": {
+          "type": "INTEGER",
+          "min": 0,
+          "max": 2025,
+          "avg": 2015.3537284894837
+        },
+        "engine_vol": {
+          "type": "INTEGER",
+          "min": 0,
+          "max": 2993,
+          "avg": 1625.3709369024857
+        },
+        "is_modern": {
+          "type": "INTEGER",
+          "min": 0,
+          "max": 1,
+          "avg": 0.9866156787762906
+        },
+        "is_otechestvenny": {
+          "type": "INTEGER",
+          "min": 1,
+          "max": 1,
+          "avg": 1.0
+        }
+      }
+    },
+    "picture": {
+      "null_percentage": {
+        "id": 0.0,
+        "car_id": 0.0,
+        "url": 0.0,
+        "type": 0.0,
+        "seqno": 0.0
+      },
+      "unique_values": {
+        "id": 8928,
+        "car_id": 444,
+        "url": 4464,
+        "type": 2,
+        "seqno": 59
+      },
+      "data_types": {
+        "id": {
+          "type": "INTEGER",
+          "min": 1,
+          "max": 8928,
+          "avg": 4464.5
+        },
+        "car_id": {
+          "type": "INTEGER",
+          "min": 10,
+          "max": 1047,
+          "avg": 525.8328853046595
+        },
+        "seqno": {
+          "type": "INTEGER",
+          "min": 1,
+          "max": 59,
+          "avg": 13.2959229390681
+        }
+      }
+    },
+    "option": {
+      "null_percentage": {
+        "id": 0.0,
+        "car_id": 0.0,
+        "code": 0.0,
+        "description": 0.0
+      },
+      "unique_values": {
+        "id": 11108,
+        "car_id": 174,
+        "code": 99,
+        "description": 114
+      },
+      "data_types": {
+        "id": {
+          "type": "INTEGER",
+          "min": 1,
+          "max": 11108,
+          "avg": 5554.5
+        },
+        "car_id": {
+          "type": "INTEGER",
+          "min": 6,
+          "max": 948,
+          "avg": 461.6561037090385
+        },
+        "description": {
+          "type": "TEXT",
+          "avg_length": 42.34713719841556,
+          "max_length": 108
+        }
+      }
+    },
+    "used_car": {
+      "null_percentage": {
+        "id": 0.0,
+        "title": 0.0,
+        "doc_num": 0.0,
+        "mark": 0.0,
+        "model": 0.0,
+        "vin": 0.0,
+        "color": 0.0,
+        "price": 0.0,
+        "city": 0.0,
+        "manufacture_year": 0.0,
+        "mileage": 0.0,
+        "body_type": 0.0,
+        "gear_box_type": 0.0,
+        "driving_gear_type": 0.0,
+        "engine_vol": 0.0,
+        "power": 0.0,
+        "fuel_type": 0.0,
+        "dealer_center": 0.0,
+        "is_modern": 0.0,
+        "is_otechestvenny": 95.95704358812381
+      },
+      "unique_values": {
+        "id": 1583,
+        "title": 54,
+        "doc_num": 396,
+        "mark": 61,
+        "model": 213,
+        "vin": 396,
+        "color": 13,
+        "price": 319,
+        "city": 3,
+        "manufacture_year": 21,
+        "mileage": 351,
+        "body_type": 9,
+        "gear_box_type": 2,
+        "driving_gear_type": 3,
+        "engine_vol": 7,
+        "power": 134,
+        "fuel_type": 4,
+        "dealer_center": 12,
+        "is_modern": 2,
+        "is_otechestvenny": 1
+      },
+      "data_types": {
+        "id": {
+          "type": "INTEGER",
+          "min": 1,
+          "max": 1583,
+          "avg": 792.0
+        },
+        "manufacture_year": {
+          "type": "INTEGER",
+          "min": 2002,
+          "max": 2025,
+          "avg": 2018.474415666456
+        },
+        "mileage": {
+          "type": "INTEGER",
+          "min": 0,
+          "max": 389563,
+          "avg": 93714.51926721416
+        },
+        "engine_vol": {
+          "type": "INTEGER",
+          "min": 0,
+          "max": 6,
+          "avg": 1.3461781427668984
+        },
+        "is_modern": {
+          "type": "INTEGER",
+          "min": 0,
+          "max": 1,
+          "avg": 0.967150979153506
+        },
+        "is_otechestvenny": {
+          "type": "INTEGER",
+          "min": 1,
+          "max": 1,
+          "avg": 1.0
+        }
+      }
+    },
+    "used_car_picture": {
+      "null_percentage": {
+        "id": 0.0,
+        "used_car_id": 0.0,
+        "url": 0.0,
+        "type": 0.0,
+        "seqno": 0.0
+      },
+      "unique_values": {
+        "id": 40154,
+        "used_car_id": 1575,
+        "url": 10044,
+        "type": 1,
+        "seqno": 1
+      },
+      "data_types": {
+        "id": {
+          "type": "INTEGER",
+          "min": 1,
+          "max": 40154,
+          "avg": 20077.5
+        },
+        "used_car_id": {
+          "type": "INTEGER",
+          "min": 1,
+          "max": 1583,
+          "avg": 779.7327788016138
+        },
+        "seqno": {
+          "type": "INTEGER",
+          "min": 0,
+          "max": 0,
+          "avg": 0.0
+        }
+      }
+    },
+    "cars": {
+      "null_percentage": {
+        "id": 0.0,
+        "mark": 0.0,
+        "model": 0.0,
+        "year": 0.0,
+        "price": 0.0,
+        "city": 0.0,
+        "description": 0.0
+      },
+      "unique_values": {
+        "id": 5,
+        "mark": 5,
+        "model": 5,
+        "year": 3,
+        "price": 5,
+        "city": 3,
+        "description": 4
+      },
+      "data_types": {
+        "id": {
+          "type": "INTEGER",
+          "min": 1,
+          "max": 5,
+          "avg": 3.0
+        },
+        "mark": {
+          "type": "TEXT",
+          "avg_length": 5.2,
+          "max_length": 8
+        },
+        "model": {
+          "type": "TEXT",
+          "avg_length": 4.2,
+          "max_length": 7
+        },
+        "year": {
+          "type": "INTEGER",
+          "min": 2019,
+          "max": 2021,
+          "avg": 2020.2
+        },
+        "price": {
+          "type": "REAL",
+          "min": 22000.0,
+          "max": 45000.0,
+          "avg": 33400.0
+        },
+        "city": {
+          "type": "TEXT",
+          "avg_length": 7.8,
+          "max_length": 15
+        },
+        "description": {
+          "type": "TEXT",
+          "avg_length": 12.2,
+          "max_length": 18
+        }
+      }
+    },
+    "sqlite_sequence": {
+      "null_percentage": {
+        "name": 0.0,
+        "seq": 0.0
+      },
+      "unique_values": {
+        "name": 4,
+        "seq": 4
+      },
+      "data_types": {}
+    },
+    "user_profiles": {
+      "null_percentage": {
+        "user_id": 0,
+        "profile_data": 0
+      },
+      "unique_values": {
+        "user_id": 0,
+        "profile_data": 0
+      },
+      "data_types": {}
+    },
+    "vin_duplicates": {
+      "null_percentage": {
+        "id": 0,
+        "vin": 0,
+        "table_name": 0,
+        "duplicate_count": 0,
+        "first_seen": 0,
+        "last_seen": 0
+      },
+      "unique_values": {
+        "id": 0,
+        "vin": 0,
+        "table_name": 0,
+        "duplicate_count": 0,
+        "first_seen": 0,
+        "last_seen": 0
+      },
+      "data_types": {
+        "id": {
+          "type": "INTEGER",
+          "min": null,
+          "max": null,
+          "avg": null
+        },
+        "duplicate_count": {
+          "type": "INTEGER",
+          "min": null,
+          "max": null,
+          "avg": null
+        }
+      }
+    },
+    "search_statistics": {
+      "null_percentage": {
+        "id": 0,
+        "search_term": 0,
+        "search_type": 0,
+        "results_count": 0,
+        "search_time_ms": 0,
+        "created_at": 0
+      },
+      "unique_values": {
+        "id": 0,
+        "search_term": 0,
+        "search_type": 0,
+        "results_count": 0,
+        "search_time_ms": 0,
+        "created_at": 0
+      },
+      "data_types": {
+        "id": {
+          "type": "INTEGER",
+          "min": null,
+          "max": null,
+          "avg": null
+        },
+        "results_count": {
+          "type": "INTEGER",
+          "min": null,
+          "max": null,
+          "avg": null
+        },
+        "search_time_ms": {
+          "type": "INTEGER",
+          "min": null,
+          "max": null,
+          "avg": null
+        }
+      }
+    },
+    "error_log": {
+      "null_percentage": {
+        "id": 0,
+        "error_type": 0,
+        "error_message": 0,
+        "stack_trace": 0,
+        "created_at": 0
+      },
+      "unique_values": {
+        "id": 0,
+        "error_type": 0,
+        "error_message": 0,
+        "stack_trace": 0,
+        "created_at": 0
+      },
+      "data_types": {
+        "id": {
+          "type": "INTEGER",
+          "min": null,
+          "max": null,
+          "avg": null
+        }
+      }
+    },
+    "query_cache": {
+      "null_percentage": {
+        "id": 0,
+        "query_hash": 0,
+        "query_text": 0,
+        "result_data": 0,
+        "created_at": 0,
+        "expires_at": 0
+      },
+      "unique_values": {
+        "id": 0,
+        "query_hash": 0,
+        "query_text": 0,
+        "result_data": 0,
+        "created_at": 0,
+        "expires_at": 0
+      },
+      "data_types": {
+        "id": {
+          "type": "INTEGER",
+          "min": null,
+          "max": null,
+          "avg": null
+        }
+      }
+    },
+    "chat_log": {
+      "null_percentage": {
+        "id": 0.0,
+        "user": 0.0,
+        "query_text": 0.0,
+        "response": 0.0,
+        "created_at": 0.0
+      },
+      "unique_values": {
+        "id": 1,
+        "user": 1,
+        "query_text": 1,
+        "response": 1,
+        "created_at": 1
+      },
+      "data_types": {
+        "id": {
+          "type": "INTEGER",
+          "min": 1,
+          "max": 1,
+          "avg": 1.0
+        },
+        "user": {
+          "type": "TEXT",
+          "avg_length": 9.0,
+          "max_length": 9
+        },
+        "query_text": {
+          "type": "TEXT",
+          "avg_length": 15.0,
+          "max_length": 15
+        },
+        "response": {
+          "type": "TEXT",
+          "avg_length": 14.0,
+          "max_length": 14
+        }
+      }
+    },
+    "chat_history": {
+      "null_percentage": {
+        "id": 0.0,
+        "user_id": 0.0,
+        "user_message": 0.0,
+        "bot_response": 0.0,
+        "intent": 0.0,
+        "entities": 0.0,
+        "used_llm": 0.0,
+        "quality_score": 0.0,
+        "timestamp": 0.0,
+        "session_id": 0.0
+      },
+      "unique_values": {
+        "id": 13,
+        "user_id": 6,
+        "user_message": 8,
+        "bot_response": 7,
+        "intent": 3,
+        "entities": 7,
+        "used_llm": 1,
+        "quality_score": 3,
+        "timestamp": 11,
+        "session_id": 13
+      },
+      "data_types": {
+        "id": {
+          "type": "INTEGER",
+          "min": 1,
+          "max": 13,
+          "avg": 7.0
+        },
+        "user_id": {
+          "type": "TEXT",
+          "avg_length": 16.384615384615383,
+          "max_length": 23
+        },
+        "user_message": {
+          "type": "TEXT",
+          "avg_length": 34.46153846153846,
+          "max_length": 106
+        },
+        "bot_response": {
+          "type": "TEXT",
+          "avg_length": 176.15384615384616,
+          "max_length": 253
+        },
+        "intent": {
+          "type": "TEXT",
+          "avg_length": 8.307692307692308,
+          "max_length": 11
+        },
+        "entities": {
+          "type": "TEXT",
+          "avg_length": 18.615384615384617,
+          "max_length": 37
+        },
+        "quality_score": {
+          "type": "REAL",
+          "min": 10.0,
+          "max": 67.0,
+          "avg": 49.69230769230769
+        },
+        "session_id": {
+          "type": "TEXT",
+          "avg_length": 36.0,
+          "max_length": 36
+        }
+      }
+    },
+    "user_queries": {
+      "null_percentage": {
+        "id": 0,
+        "user_id": 0,
+        "query": 0,
+        "response": 0,
+        "intent": 0,
+        "entities": 0,
+        "timestamp": 0
+      },
+      "unique_values": {
+        "id": 0,
+        "user_id": 0,
+        "query": 0,
+        "response": 0,
+        "intent": 0,
+        "entities": 0,
+        "timestamp": 0
+      },
+      "data_types": {
+        "id": {
+          "type": "INTEGER",
+          "min": null,
+          "max": null,
+          "avg": null
+        }
+      }
+    },
+    "user_favorites": {
+      "null_percentage": {
+        "id": 0,
+        "user_id": 0,
+        "brand": 0,
+        "model": 0,
+        "year": 0,
+        "price": 0,
+        "dealer_center": 0,
+        "notes": 0,
+        "added_at": 0
+      },
+      "unique_values": {
+        "id": 0,
+        "user_id": 0,
+        "brand": 0,
+        "model": 0,
+        "year": 0,
+        "price": 0,
+        "dealer_center": 0,
+        "notes": 0,
+        "added_at": 0
+      },
+      "data_types": {
+        "id": {
+          "type": "INTEGER",
+          "min": null,
+          "max": null,
+          "avg": null
+        },
+        "year": {
+          "type": "INTEGER",
+          "min": null,
+          "max": null,
+          "avg": null
+        },
+        "price": {
+          "type": "INTEGER",
+          "min": null,
+          "max": null,
+          "avg": null
+        }
+      }
+    },
+    "user_filters": {
+      "null_percentage": {
+        "id": 0,
+        "user_id": 0,
+        "filter_name": 0,
+        "filter_params": 0,
+        "created_at": 0
+      },
+      "unique_values": {
+        "id": 0,
+        "user_id": 0,
+        "filter_name": 0,
+        "filter_params": 0,
+        "created_at": 0
+      },
+      "data_types": {
+        "id": {
+          "type": "INTEGER",
+          "min": null,
+          "max": null,
+          "avg": null
+        }
+      }
+    },
+    "user_preferences": {
+      "null_percentage": {
+        "id": 0,
+        "user_id": 0,
+        "preferred_brands": 0,
+        "preferred_price_range": 0,
+        "preferred_body_types": 0,
+        "preferred_fuel_types": 0,
+        "preferred_cities": 0,
+        "updated_at": 0
+      },
+      "unique_values": {
+        "id": 0,
+        "user_id": 0,
+        "preferred_brands": 0,
+        "preferred_price_range": 0,
+        "preferred_body_types": 0,
+        "preferred_fuel_types": 0,
+        "preferred_cities": 0,
+        "updated_at": 0
+      },
+      "data_types": {
+        "id": {
+          "type": "INTEGER",
+          "min": null,
+          "max": null,
+          "avg": null
+        }
+      }
+    },
+    "dealer_centers": {
+      "null_percentage": {
+        "id": 0.0,
+        "name": 0.0,
+        "address": 0.0,
+        "city": 0.0,
+        "brands": 0.0,
+        "website": 0.0,
+        "phone": 0.0,
+        "working_hours": 0.0,
+        "latitude": 100.0,
+        "longitude": 100.0
+      },
+      "unique_values": {
+        "id": 24,
+        "name": 22,
+        "address": 14,
+        "city": 3,
+        "brands": 17,
+        "website": 1,
+        "phone": 1,
+        "working_hours": 1,
+        "latitude": 0,
+        "longitude": 0
+      },
+      "data_types": {
+        "id": {
+          "type": "INTEGER",
+          "min": 1,
+          "max": 24,
+          "avg": 12.5
+        },
+        "name": {
+          "type": "TEXT",
+          "avg_length": 20.583333333333332,
+          "max_length": 37
+        },
+        "address": {
+          "type": "TEXT",
+          "avg_length": 34.166666666666664,
+          "max_length": 39
+        },
+        "city": {
+          "type": "TEXT",
+          "avg_length": 13.083333333333334,
+          "max_length": 14
+        },
+        "brands": {
+          "type": "TEXT",
+          "avg_length": 6.0,
+          "max_length": 17
+        },
+        "website": {
+          "type": "TEXT",
+          "avg_length": 0.0,
+          "max_length": 0
+        },
+        "phone": {
+          "type": "TEXT",
+          "avg_length": 0.0,
+          "max_length": 0
+        },
+        "working_hours": {
+          "type": "TEXT",
+          "avg_length": 0.0,
+          "max_length": 0
+        },
+        "latitude": {
+          "type": "REAL",
+          "min": null,
+          "max": null,
+          "avg": null
+        },
+        "longitude": {
+          "type": "REAL",
+          "min": null,
+          "max": null,
+          "avg": null
+        }
+      }
+    }
+  },
+  "relationships": [],
+  "indexes": [
+    {
+      "name": "sqlite_autoindex_user_profiles_1",
+      "table": "user_profiles",
+      "sql": null
+    },
+    {
+      "name": "idx_car_mark",
+      "table": "car",
+      "sql": "CREATE INDEX idx_car_mark ON car(mark)"
+    },
+    {
+      "name": "idx_car_model",
+      "table": "car",
+      "sql": "CREATE INDEX idx_car_model ON car(model)"
+    },
+    {
+      "name": "idx_car_price",
+      "table": "car",
+      "sql": "CREATE INDEX idx_car_price ON car(price)"
+    },
+    {
+      "name": "idx_car_year",
+      "table": "car",
+      "sql": "CREATE INDEX idx_car_year ON car(manufacture_year)"
+    },
+    {
+      "name": "idx_car_vin",
+      "table": "car",
+      "sql": "CREATE INDEX idx_car_vin ON car(vin)"
+    },
+    {
+      "name": "idx_car_fuel_type",
+      "table": "car",
+      "sql": "CREATE INDEX idx_car_fuel_type ON car(fuel_type)"
+    },
+    {
+      "name": "idx_car_body_type",
+      "table": "car",
+      "sql": "CREATE INDEX idx_car_body_type ON car(body_type)"
+    },
+    {
+      "name": "idx_car_city",
+      "table": "car",
+      "sql": "CREATE INDEX idx_car_city ON car(city)"
+    },
+    {
+      "name": "idx_used_car_mark",
+      "table": "used_car",
+      "sql": "CREATE INDEX idx_used_car_mark ON used_car(mark)"
+    },
+    {
+      "name": "idx_used_car_model",
+      "table": "used_car",
+      "sql": "CREATE INDEX idx_used_car_model ON used_car(model)"
+    },
+    {
+      "name": "idx_used_car_price",
+      "table": "used_car",
+      "sql": "CREATE INDEX idx_used_car_price ON used_car(price)"
+    },
+    {
+      "name": "idx_used_car_year",
+      "table": "used_car",
+      "sql": "CREATE INDEX idx_used_car_year ON used_car(manufacture_year)"
+    },
+    {
+      "name": "idx_used_car_vin",
+      "table": "used_car",
+      "sql": "CREATE INDEX idx_used_car_vin ON used_car(vin)"
+    },
+    {
+      "name": "idx_used_car_mileage",
+      "table": "used_car",
+      "sql": "CREATE INDEX idx_used_car_mileage ON used_car(mileage)"
+    },
+    {
+      "name": "idx_used_car_fuel_type",
+      "table": "used_car",
+      "sql": "CREATE INDEX idx_used_car_fuel_type ON used_car(fuel_type)"
+    },
+    {
+      "name": "idx_used_car_body_type",
+      "table": "used_car",
+      "sql": "CREATE INDEX idx_used_car_body_type ON used_car(body_type)"
+    },
+    {
+      "name": "idx_used_car_city",
+      "table": "used_car",
+      "sql": "CREATE INDEX idx_used_car_city ON used_car(city)"
+    },
+    {
+      "name": "idx_picture_car_id",
+      "table": "picture",
+      "sql": "CREATE INDEX idx_picture_car_id ON picture(car_id)"
+    },
+    {
+      "name": "idx_used_car_picture_used_car_id",
+      "table": "used_car_picture",
+      "sql": "CREATE INDEX idx_used_car_picture_used_car_id ON used_car_picture(used_car_id)"
+    },
+    {
+      "name": "idx_option_car_id",
+      "table": "option",
+      "sql": "CREATE INDEX idx_option_car_id ON option(car_id)"
+    },
+    {
+      "name": "sqlite_autoindex_query_cache_1",
+      "table": "query_cache",
+      "sql": null
+    },
+    {
+      "name": "idx_car_dealer_center",
+      "table": "car",
+      "sql": "CREATE INDEX idx_car_dealer_center ON car(dealer_center)"
+    },
+    {
+      "name": "sqlite_autoindex_user_favorites_1",
+      "table": "user_favorites",
+      "sql": null
+    },
+    {
+      "name": "sqlite_autoindex_user_preferences_1",
+      "table": "user_preferences",
+      "sql": null
+    }
+  ],
+  "constraints": {
+    "car": [
+      {
+        "column": "id",
+        "type": "NOT NULL"
+      },
+      {
+        "column": "id",
+        "type": "PRIMARY KEY"
+      }
+    ],
+    "picture": [
+      {
+        "column": "id",
+        "type": "NOT NULL"
+      },
+      {
+        "column": "id",
+        "type": "PRIMARY KEY"
+      },
+      {
+        "column": "car_id",
+        "type": "NOT NULL"
+      }
+    ],
+    "option": [
+      {
+        "column": "id",
+        "type": "NOT NULL"
+      },
+      {
+        "column": "id",
+        "type": "PRIMARY KEY"
+      },
+      {
+        "column": "car_id",
+        "type": "NOT NULL"
+      }
+    ],
+    "used_car": [
+      {
+        "column": "id",
+        "type": "NOT NULL"
+      },
+      {
+        "column": "id",
+        "type": "PRIMARY KEY"
+      }
+    ],
+    "used_car_picture": [
+      {
+        "column": "id",
+        "type": "NOT NULL"
+      },
+      {
+        "column": "id",
+        "type": "PRIMARY KEY"
+      },
+      {
+        "column": "used_car_id",
+        "type": "NOT NULL"
+      }
+    ],
+    "cars": [
+      {
+        "column": "id",
+        "type": "PRIMARY KEY"
+      }
+    ],
+    "sqlite_sequence": [],
+    "user_profiles": [
+      {
+        "column": "user_id",
+        "type": "PRIMARY KEY"
+      }
+    ],
+    "vin_duplicates": [
+      {
+        "column": "id",
+        "type": "PRIMARY KEY"
+      },
+      {
+        "column": "vin",
+        "type": "NOT NULL"
+      },
+      {
+        "column": "table_name",
+        "type": "NOT NULL"
+      }
+    ],
+    "search_statistics": [
+      {
+        "column": "id",
+        "type": "PRIMARY KEY"
+      },
+      {
+        "column": "search_term",
+        "type": "NOT NULL"
+      },
+      {
+        "column": "search_type",
+        "type": "NOT NULL"
+      }
+    ],
+    "error_log": [
+      {
+        "column": "id",
+        "type": "PRIMARY KEY"
+      },
+      {
+        "column": "error_type",
+        "type": "NOT NULL"
+      },
+      {
+        "column": "error_message",
+        "type": "NOT NULL"
+      }
+    ],
+    "query_cache": [
+      {
+        "column": "id",
+        "type": "PRIMARY KEY"
+      },
+      {
+        "column": "query_hash",
+        "type": "NOT NULL"
+      },
+      {
+        "column": "query_text",
+        "type": "NOT NULL"
+      },
+      {
+        "column": "result_data",
+        "type": "NOT NULL"
+      }
+    ],
+    "chat_log": [
+      {
+        "column": "id",
+        "type": "PRIMARY KEY"
+      }
+    ],
+    "chat_history": [
+      {
+        "column": "id",
+        "type": "PRIMARY KEY"
+      },
+      {
+        "column": "user_id",
+        "type": "NOT NULL"
+      },
+      {
+        "column": "user_message",
+        "type": "NOT NULL"
+      },
+      {
+        "column": "bot_response",
+        "type": "NOT NULL"
+      }
+    ],
+    "user_queries": [
+      {
+        "column": "id",
+        "type": "PRIMARY KEY"
+      },
+      {
+        "column": "user_id",
+        "type": "NOT NULL"
+      },
+      {
+        "column": "query",
+        "type": "NOT NULL"
+      }
+    ],
+    "user_favorites": [
+      {
+        "column": "id",
+        "type": "PRIMARY KEY"
+      },
+      {
+        "column": "user_id",
+        "type": "NOT NULL"
+      },
+      {
+        "column": "brand",
+        "type": "NOT NULL"
+      },
+      {
+        "column": "model",
+        "type": "NOT NULL"
+      }
+    ],
+    "user_filters": [
+      {
+        "column": "id",
+        "type": "PRIMARY KEY"
+      },
+      {
+        "column": "user_id",
+        "type": "NOT NULL"
+      },
+      {
+        "column": "filter_name",
+        "type": "NOT NULL"
+      },
+      {
+        "column": "filter_params",
+        "type": "NOT NULL"
+      }
+    ],
+    "user_preferences": [
+      {
+        "column": "id",
+        "type": "PRIMARY KEY"
+      },
+      {
+        "column": "user_id",
+        "type": "NOT NULL"
+      }
+    ],
+    "dealer_centers": [
+      {
+        "column": "id",
+        "type": "PRIMARY KEY"
+      }
+    ]
+  },
+  "sample_data": {
+    "car": [
+      {
+        "id": 1,
+        "title": "Заказ на автомобиль",
+        "doc_num": "015306",
+        "stock_qty": 1,
+        "mark": "Mazda",
+        "model": "CX-5",
+        "code_compl": "CX05ZHIA",
+        "vin": "LVRHDCAC8SN570274",
+        "color": "Platinum Steel Gray (Серый)",
+        "price": 3990000.0,
+        "city": "Краснодар",
+        "manufacture_year": 2025,
+        "fuel_type": "бензин",
+        "power": 155.0,
+        "body_type": "Кроссовер",
+        "gear_box_type": "автомат",
+        "driving_gear_type": "передний",
+        "engine_vol": 1998,
+        "dealer_center": "Не указан",
+        "is_modern": 1,
+        "is_otechestvenny": null
+      },
+      {
+        "id": 2,
+        "title": "Заказ на автомобиль",
+        "doc_num": "015307",
+        "stock_qty": 1,
+        "mark": "Mazda",
+        "model": "CX-5",
+        "code_compl": "CX05ZHI",
+        "vin": "LVRHDCAC8SN567150",
+        "color": "Pearlescent White (Перламутровый белый)",
+        "price": 4490000.0,
+        "city": "Краснодар",
+        "manufacture_year": 2025,
+        "fuel_type": "бензин",
+        "power": 155.0,
+        "body_type": "Кроссовер",
+        "gear_box_type": "автомат",
+        "driving_gear_type": "передний",
+        "engine_vol": 1998,
+        "dealer_center": "Не указан",
+        "is_modern": 1,
+        "is_otechestvenny": null
+      },
+      {
+        "id": 3,
+        "title": "Заказ на автомобиль",
+        "doc_num": "014885",
+        "stock_qty": 1,
+        "mark": "Москвич",
+        "model": "МОСКВИЧ 3",
+        "code_compl": "M03-1B-E1-G05-M6-F-5",
+        "vin": "X7LJA13BAM1001212",
+        "color": "Белый",
+        "price": 1601000.0,
+        "city": "Краснодар",
+        "manufacture_year": 2023,
+        "fuel_type": "бензин",
+        "power": 136.0,
+        "body_type": "Кроссовер",
+        "gear_box_type": "механика",
+        "driving_gear_type": "передний",
+        "engine_vol": 1499,
+        "dealer_center": "Не указан",
+        "is_modern": 1,
+        "is_otechestvenny": 1
+      }
+    ],
+    "picture": [
+      {
+        "id": 1,
+        "car_id": 10,
+        "url": "http://aaa-motors.ru/IMG/MAZDA_KRD/015095/99_1_65548.png",
+        "type": "99",
+        "seqno": 1
+      },
+      {
+        "id": 2,
+        "car_id": 10,
+        "url": "http://aaa-motors.ru/IMG/MAZDA_KRD/015095/99_2_65549.png",
+        "type": "99",
+        "seqno": 2
+      },
+      {
+        "id": 3,
+        "car_id": 10,
+        "url": "http://aaa-motors.ru/IMG/MAZDA_KRD/015095/99_3_65550.png",
+        "type": "99",
+        "seqno": 3
+      }
+    ],
+    "option": [
+      {
+        "id": 1,
+        "car_id": 6,
+        "code": "opt0001",
+        "description": "Зеркала заднего вида в цвет кузова с обогревом и электроприводом"
+      },
+      {
+        "id": 2,
+        "car_id": 6,
+        "code": "opt0002",
+        "description": "Ручки дверей в цвет кузова"
+      },
+      {
+        "id": 3,
+        "car_id": 6,
+        "code": "opt0003",
+        "description": "Люк с электроприводом, со шторкой"
+      }
+    ],
+    "used_car": [
+      {
+        "id": 1,
+        "title": " ДОП.СКИДКА до 150 000 р.*\nКРЕДИТ от 0,1 % **\nДАРИМ 10 000 бонусов при покупке автомобиля***\n\n!! ВОЗМОЖНО !!\n! Кредит по двум документам\n! Кредит без первоначального взноса\n! Обмен на Ваш автомобиль.\n\nПРЕИМУЩЕСТВА покупки  в ААА Моторс:\n\n*ВЫКУПИМ Ваш автомобиль, даже если он ОБРЕМЕНЁН или в ЗАЛОГЕ  у банка;\n*ОБМЕНЯЕМ на любой из наших автомобилей – принимаем все автомобили, \nлюбых марок, в том числе находящиеся в кредите, сняв с Вас все обременения без надобности посещать банк и ГИБДД;\n*ПРИМЕМ на КОМИССИЮ на Ваших условиях;\n*ONLINE-оценка, без посещения нашей площадки, встретимся, если вас устроит наша оценка\n*ВЫЕЗДНАЯ ОЦЕНКА в любое удобное для вас время и место  \n\n\n*действует до конца месяца при покупке в КРЕДИТ или ОБМЕНЕ!\nАкция распространяется не на все автомобили на складе. \n**кредит предоставляется банком-партнером Росбанк авто, \nЛицензия  №2272 от 28.01.15, кредит предоставляется по ставке 0,1 %,\nпри первоначальном взносе от 30 %, от 12 до  84 месяцев.\n***При покупке данного автомобиля дарим 10 000 бонусов, которыми можно оплатить до 15% стоимости слесарного ремонта и запчастей в сети автосервисов \"АвтоЭксперт\"\n",
+        "doc_num": "17041494",
+        "mark": "Nissan",
+        "model": "Patrol",
+        "vin": "JN1TANY62U0065579",
+        "color": "Белый",
+        "price": 2998000.0,
+        "city": "Краснодар",
+        "manufacture_year": 2015,
+        "mileage": 133149,
+        "body_type": "Внедорожник",
+        "gear_box_type": "Автомат",
+        "driving_gear_type": "Полный",
+        "engine_vol": 5,
+        "power": 405.0,
+        "fuel_type": "Бензин",
+        "dealer_center": "Не указан",
+        "is_modern": 1,
+        "is_otechestvenny": null
+      },
+      {
+        "id": 2,
+        "title": "_",
+        "doc_num": "42006442",
+        "mark": "Volkswagen",
+        "model": "Tiguan L PRO",
+        "vin": "LSVXCABD6R2029402",
+        "color": "Чёрный",
+        "price": 6751000.0,
+        "city": "Краснодар",
+        "manufacture_year": 2024,
+        "mileage": 20,
+        "body_type": "Седан",
+        "gear_box_type": "Автомат",
+        "driving_gear_type": "Полный",
+        "engine_vol": 1,
+        "power": 220.0,
+        "fuel_type": "Бензин",
+        "dealer_center": "Не указан",
+        "is_modern": 1,
+        "is_otechestvenny": null
+      },
+      {
+        "id": 3,
+        "title": "_",
+        "doc_num": "42006471",
+        "mark": "Volkswagen",
+        "model": "Tiguan L PRO",
+        "vin": "LSVXCABD2R2031499",
+        "color": "Оранжевый",
+        "price": 5350000.0,
+        "city": "Краснодар",
+        "manufacture_year": 2024,
+        "mileage": 100,
+        "body_type": "Универсал",
+        "gear_box_type": "Автомат",
+        "driving_gear_type": "Полный",
+        "engine_vol": 1,
+        "power": 220.0,
+        "fuel_type": "Бензин",
+        "dealer_center": "Не указан",
+        "is_modern": 1,
+        "is_otechestvenny": null
+      }
+    ],
+    "used_car_picture": [
+      {
+        "id": 1,
+        "used_car_id": 1,
+        "url": "http://www.aaa-motors.ru/UsedCar/IMG/ASP_RST/17041494/180265_99.jpg",
+        "type": "",
+        "seqno": 0
+      },
+      {
+        "id": 2,
+        "used_car_id": 1,
+        "url": "http://www.aaa-motors.ru/UsedCar/IMG/ASP_RST/17041494/180266_99.jpg",
+        "type": "",
+        "seqno": 0
+      },
+      {
+        "id": 3,
+        "used_car_id": 1,
+        "url": "http://www.aaa-motors.ru/UsedCar/IMG/ASP_RST/17041494/180267_99.jpg",
+        "type": "",
+        "seqno": 0
+      }
+    ],
+    "cars": [
+      {
+        "id": 1,
+        "mark": "Toyota",
+        "model": "Camry",
+        "year": 2020,
+        "price": 25000.0,
+        "city": "Москва",
+        "description": "Отличное состояние"
+      },
+      {
+        "id": 2,
+        "mark": "Honda",
+        "model": "Civic",
+        "year": 2019,
+        "price": 22000.0,
+        "city": "Санкт-Петербург",
+        "description": "Новый"
+      },
+      {
+        "id": 3,
+        "mark": "BMW",
+        "model": "X5",
+        "year": 2021,
+        "price": 45000.0,
+        "city": "Москва",
+        "description": "Полный комплект"
+      }
+    ],
+    "sqlite_sequence": [
+      {
+        "name": "cars",
+        "seq": 5
+      },
+      {
+        "name": "chat_log",
+        "seq": 1
+      },
+      {
+        "name": "chat_history",
+        "seq": 13
+      }
+    ],
+    "user_profiles": [],
+    "vin_duplicates": [],
+    "search_statistics": [],
+    "error_log": [],
+    "query_cache": [],
+    "chat_log": [
+      {
+        "id": 1,
+        "user": "test_user",
+        "query_text": "тестовый запрос",
+        "response": "тестовый ответ",
+        "created_at": "2025-06-22 17:49:34"
+      }
+    ],
+    "chat_history": [
+      {
+        "id": 1,
+        "user_id": "test_user_clarification",
+        "user_message": "Хочу купить машину",
+        "bot_response": "🔍 **Поиск автомобилей**\nПожалуйста, уточните ваш запрос. Например:\n• Назовите марку автомобиля\n• Укажите модель\n• Опишите ваши предпочтения\n\n💡 **Нужна помощь?**\n• 📞 Позвоните нам: +7 (XXX) XXX-XX-XX\n• 📧 Напишите: info@autosalon.ru\n• 🏢 Приезжайте в салон",
+        "intent": "general",
+        "entities": "{}",
+        "used_llm": 1,
+        "quality_score": 49.0,
+        "timestamp": "2025-06-23 02:37:52",
+        "session_id": "5ca25add-ac3a-4df3-8cf1-1474c4aa8ebb"
+      },
+      {
+        "id": 2,
+        "user_id": "test_user_context",
+        "user_message": "А какие модели есть?",
+        "bot_response": "🔍 **Информация о Lada**\n📊 Найдено 10 автомобилей в базе данных.\n\n💡 **Нужна помощь?**\n• 📞 Позвоните нам: +7 (XXX) XXX-XX-XX\n• 📧 Напишите: info@autosalon.ru\n• 🏢 Приезжайте в салон",
+        "intent": "general",
+        "entities": "{\"brand\": \"Lada\"}",
+        "used_llm": 1,
+        "quality_score": 67.0,
+        "timestamp": "2025-06-23 02:38:25",
+        "session_id": "b1f3f7bd-b11b-4540-8b2f-a406bdadebfe"
+      },
+      {
+        "id": 3,
+        "user_id": "test_user_fallback",
+        "user_message": "Сравни BMW X5 и Mercedes GLE по цене, характеристикам и надежности, учитывая мой бюджет 5 миллионов рублей",
+        "bot_response": "Ошибка: HTTPConnectionPool(host='localhost', port=11434): Read timed out. (read timeout=90)",
+        "intent": "comparison",
+        "entities": "{\"brand\": \"BMW\", \"model\": \"X5\"}",
+        "used_llm": 1,
+        "quality_score": 10.0,
+        "timestamp": "2025-06-23 02:39:29",
+        "session_id": "889941d3-dc63-4622-b52e-30e4f4d83059"
+      }
+    ],
+    "user_queries": [],
+    "user_favorites": [],
+    "user_filters": [],
+    "user_preferences": [],
+    "dealer_centers": [
+      {
+        "id": 1,
+        "name": "ААА Моторс",
+        "address": "Воронеж, ул. Остужева, 68",
+        "city": "Воронеж",
+        "brands": "",
+        "website": "",
+        "phone": "",
+        "working_hours": "",
+        "latitude": null,
+        "longitude": null
+      },
+      {
+        "id": 2,
+        "name": "ААА Моторс",
+        "address": "Краснодар, ул. Аэропортовская, 4/1",
+        "city": "Краснодар",
+        "brands": "",
+        "website": "",
+        "phone": "",
+        "working_hours": "",
+        "latitude": null,
+        "longitude": null
+      },
+      {
+        "id": 3,
+        "name": "ААА Моторс — дилер DongFeng",
+        "address": "Краснодар, ул. Аэропортовская, 4а",
+        "city": "Краснодар",
+        "brands": "DongFeng",
+        "website": "",
+        "phone": "",
+        "working_hours": "",
+        "latitude": null,
+        "longitude": null
+      }
+    ]
+  }
+}

@@ -1,0 +1,137 @@
+{
+  "timestamp": "2025-07-27T14:54:51.477663",
+  "basic_statistics": {},
+  "price_analysis": {},
+  "brand_analysis": {
+    "top_brands_by_count": {
+      "Москвич": {
+        "count": 108,
+        "avg_price": 2445752.722222222
+      },
+      "Chery": {
+        "count": 59,
+        "avg_price": 2627760.3001373624
+      },
+      "Geely": {
+        "count": 56,
+        "avg_price": 3381461.1591666667
+      },
+      "SOLARIS": {
+        "count": 56,
+        "avg_price": 2594785.9285714286
+      },
+      "JAECOO": {
+        "count": 52,
+        "avg_price": 3862886.8426923077
+      },
+      "OMODA": {
+        "count": 50,
+        "avg_price": 2360340.1469387757
+      },
+      "CHANGAN": {
+        "count": 41,
+        "avg_price": 3184499.7560975607
+      },
+      "Haval": {
+        "count": 38,
+        "avg_price": 2646355.848958333
+      },
+      "Hyundai": {
+        "count": 33,
+        "avg_price": 2257147.212121212
+      },
+      "JAC": {
+        "count": 31,
+        "avg_price": 3051441.935483871
+      }
+    },
+    "top_brands_by_price": {
+      "GMC": {
+        "count": 1,
+        "avg_price": 13800000.0
+      },
+      "Dodge": {
+        "count": 1,
+        "avg_price": 9850000.0
+      },
+      "Tesla": {
+        "count": 1,
+        "avg_price": 7850000.0
+      },
+      "AITO": {
+        "count": 13,
+        "avg_price": 7508669.230769231
+      },
+      "WEY": {
+        "count": 3,
+        "avg_price": 7328334.41
+      },
+      "RAM ": {
+        "count": 1,
+        "avg_price": 7210000.0
+      },
+      "SERES": {
+        "count": 5,
+        "avg_price": 7208000.0
+      },
+      "Lexus": {
+        "count": 9,
+        "avg_price": 7156461.111111111
+      },
+      "Lixiang": {
+        "count": 2,
+        "avg_price": 7150000.0
+      },
+      "Porsche": {
+        "count": 2,
+        "avg_price": 7075000.0
+      }
+    },
+    "type_distribution": {
+      "new": 525,
+      "used": 396
+    },
+    "total_brands": 72
+  },
+  "year_analysis": {},
+  "city_analysis": {
+    "top_cities_by_count": {
+      "Ростов-на-Дону": {
+        "count": 696,
+        "avg_price": 3095973.7949224957
+      },
+      "Краснодар": {
+        "count": 168,
+        "avg_price": 3805578.636337419
+      },
+      "Воронеж": {
+        "count": 57,
+        "avg_price": 2706570.617272727
+      }
+    },
+    "top_cities_by_price": {
+      "Краснодар": {
+        "count": 168,
+        "avg_price": 3805578.636337419
+      },
+      "Ростов-на-Дону": {
+        "count": 696,
+        "avg_price": 3095973.7949224957
+      },
+      "Воронеж": {
+        "count": 57,
+        "avg_price": 2706570.617272727
+      }
+    },
+    "total_cities": 3,
+    "city_statistics": {
+      "total_cars": 921,
+      "avg_price_overall": 3202707.682844214
+    }
+  },
+  "charts": {
+    "price_distribution": "static/price_distribution.png",
+    "brand_popularity": "static/brand_popularity.png",
+    "interactive_analysis": ""
+  }
+}

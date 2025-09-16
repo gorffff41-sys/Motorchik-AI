@@ -1,0 +1,80 @@
+[
+  {
+    "timestamp": 1753821563.578802,
+    "date": "2025-07-29T23:39:23.578804",
+    "query": "Покажи красные BMW",
+    "predicted_type": "car_related",
+    "actual_type": "car_related",
+    "confidence": 0.8,
+    "response_quality": 4,
+    "user_satisfaction": 4,
+    "correct_classification": true,
+    "high_confidence_correct": true,
+    "high_confidence_incorrect": false
+  },
+  {
+    "timestamp": 1753821563.5791028,
+    "date": "2025-07-29T23:39:23.579103",
+    "query": "привет",
+    "predicted_type": "general",
+    "actual_type": "general",
+    "confidence": 0.9,
+    "response_quality": 5,
+    "user_satisfaction": 5,
+    "correct_classification": true,
+    "high_confidence_correct": true,
+    "high_confidence_incorrect": false
+  },
+  {
+    "timestamp": 1753821563.5793507,
+    "date": "2025-07-29T23:39:23.579351",
+    "query": "найди машину",
+    "predicted_type": "car_related",
+    "actual_type": "car_related",
+    "confidence": 0.7,
+    "response_quality": 3,
+    "user_satisfaction": 3,
+    "correct_classification": true,
+    "high_confidence_correct": false,
+    "high_confidence_incorrect": false
+  },
+  {
+    "timestamp": 1753821579.7612326,
+    "date": "2025-07-29T23:39:39.761234",
+    "query": "Покажи красные BMW",
+    "predicted_type": "car_related",
+    "actual_type": "car_related",
+    "confidence": 0.8,
+    "response_quality": 4,
+    "user_satisfaction": 4,
+    "correct_classification": true,
+    "high_confidence_correct": true,
+    "high_confidence_incorrect": false
+  },
+  {
+    "timestamp": 1753821579.7615755,
+    "date": "2025-07-29T23:39:39.761576",
+    "query": "привет",
+    "predicted_type": "general",
+    "actual_type": "general",
+    "confidence": 0.9,
+    "response_quality": 5,
+    "user_satisfaction": 5,
+    "correct_classification": true,
+    "high_confidence_correct": true,
+    "high_confidence_incorrect": false
+  },
+  {
+    "timestamp": 1753821579.761788,
+    "date": "2025-07-29T23:39:39.761788",
+    "query": "найди машину",
+    "predicted_type": "car_related",
+    "actual_type": "car_related",
+    "confidence": 0.7,
+    "response_quality": 3,
+    "user_satisfaction": 3,
+    "correct_classification": true,
+    "high_confidence_correct": false,
+    "high_confidence_incorrect": false
+  }
+]

@@ -1450,21 +1450,54 @@ class UniversalQueryProcessor:
         
         # --- РАСПОЗНАВАНИЕ ТИПА ФРАЗЫ ДЛЯ МАРШРУТИЗАЦИИ (DB vs Llama) ---
         # Командные фразы для БД: "найди", "покажи", "подбери", а также когда явно заданы численные фильтры (power/mileage)
-        is_command = any(w in ql for w in ['найди', 'покажи', 'подбери', 'подберите', 'подобери'])
-        has_numeric_filters = any(entities.get(k) is not None for k in ['power_from', 'power_to', 'power_exact', 'mileage_from', 'mileage_to'])
+        is_command = any(w in ql for w in ['найди', 'покажи', 'подбери', 'подберите', 'подобри'])
         # Вопросный формат для Llama подбора сущностей: "какие машины есть ..." без строгих фильтров
         is_question_list = (('какие' in ql and 'есть' in ql and ('машин' in ql or 'авто' in ql)))
 
+        # Определяем строгие и мягкие числовые ограничения
+
+        def _present(key: str) -> bool:
+            return entities.get(key) is not None
+
+        def _pair_strict(a: str, b: str) -> bool:
+            return _present(a) and _present(b)
+
+        def _any_of(keys):
+            return any(_present(k) for k in keys)
+
+        strict_pairs = [
+            ('power_from', 'power_to'),
+            ('mileage_from', 'mileage_to'),
+            ('price_from', 'price_to'),
+            ('year_from', 'year_to'),
+            ('engine_vol_from', 'engine_vol_to'),
+            ('acceleration_from', 'acceleration_to'),
+            ('owners_from', 'owners_to'),
+        ]
+        has_strict_range = any(_pair_strict(a, b) for a, b in strict_pairs) or _present('power_exact') or _present('engine_vol_exact') or _present('owners_count')
+        numeric_keys = [
+            'power_from','power_to','power_exact','mileage_from','mileage_to','price_from','price_to','year_from','year_to',
+            'engine_vol_from','engine_vol_to','engine_vol_exact','acceleration_from','acceleration_to','owners_from','owners_to','owners_count','seats'
+        ]
+        has_any_numeric = _any_of(numeric_keys)
+        has_soft_numeric = has_any_numeric and not has_strict_range
+
         # Если командный или есть численные фильтры → сразу БД
-        if is_command or has_numeric_filters:
+        if is_command:
             local_result = self.search.process(query, entities, context, offset=offset, limit=limit, show_cars=show_cars)
             if local_result.get('cars'):
                 local_result['message'] = 'Результат из базы данных.'
                 return local_result
             # Если БД не нашла — продолжаем обычным путём
         else:
-            # Если вопросный формат без фильтров → Llama: предложить 3-5 разных по марке и модели
-            if is_question_list and not has_numeric_filters:
+            # Если вопросный формат + строгие диапазоны → БД
+            if is_question_list and has_strict_range:
+                local_result = self.search.process(query, entities, context, offset=offset, limit=limit, show_cars=show_cars)
+                if local_result.get('cars'):
+                    local_result['message'] = 'Результат из базы данных.'
+                    return local_result
+            # Если вопросный формат + мягкие числовые ограничения → Llama: предложить 3–5 примеров
+            if is_question_list and has_soft_numeric:
                 try:
                     from database import search_all_cars
                     all_cars = search_all_cars(limit=200)
@@ -1494,6 +1527,13 @@ class UniversalQueryProcessor:
                     }
                 except Exception:
                     pass
+            # Любые другие числовые ограничения → БД
+            if has_any_numeric:
+                local_result = self.search.process(query, entities, context, offset=offset, limit=limit, show_cars=show_cars)
+                if local_result.get('cars'):
+                    local_result['message'] = 'Результат из базы данных.'
+                    return local_result
+
         # --- СНАЧАЛА ЛОКАЛЬНЫЙ ПОИСК ---
         local_result = self.search.process(query, entities, context, offset=offset, limit=limit, show_cars=show_cars)
         print(f"[DEBUG] Local result type: {type(local_result)}")

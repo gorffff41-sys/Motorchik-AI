@@ -153,7 +153,7 @@ class NERIntentClassifier:
     MARK_SYNONYMS = {
         'мерседес': ['mercedes', 'mercedes-benz', 'mb'],
         'bmw': ['бмв'],
-        'лада': ['lada', 'ваз', 'ладу', 'лады', 'ладе', 'ладой', 'ладою'],
+        'лада': ['lada', 'ваз'],
         'тойота': ['toyota'],
         'audi': ['ауди'],
         'volkswagen': ['vw', 'фольксваген'],
@@ -402,92 +402,6 @@ class NERIntentClassifier:
         'с авариями': ['with accidents', 'битый', 'аварийный', 'в авариях'],
         'незначительные повреждения': ['minor damage', 'легкие повреждения', 'царапины'],
         'серьезные повреждения': ['major damage', 'серьезные повреждения', 'сильно битый']
-    }
-    
-    # Новые словари для характеристик автомобилей по ключевым словам
-    SPEED_CHARACTERISTICS = {
-        'быстрый': {'power_from': 200, 'acceleration_to': 6.0},
-        'быстрая': {'power_from': 200, 'acceleration_to': 6.0},
-        'быстрое': {'power_from': 200, 'acceleration_to': 6.0},
-        'быстрые': {'power_from': 200, 'acceleration_to': 6.0},
-        'медленный': {'power_to': 120, 'acceleration_from': 8.0},
-        'медленная': {'power_to': 120, 'acceleration_from': 8.0},
-        'медленное': {'power_to': 120, 'acceleration_from': 8.0},
-        'медленные': {'power_to': 120, 'acceleration_from': 8.0},
-        'скоростной': {'power_from': 250, 'acceleration_to': 5.0},
-        'скоростная': {'power_from': 250, 'acceleration_to': 5.0},
-        'скоростное': {'power_from': 250, 'acceleration_to': 5.0},
-        'скоростные': {'power_from': 250, 'acceleration_to': 5.0},
-        'тихоходный': {'power_to': 100, 'acceleration_from': 10.0},
-        'тихоходная': {'power_to': 100, 'acceleration_from': 10.0},
-        'тихоходное': {'power_to': 100, 'acceleration_from': 10.0},
-        'тихоходные': {'power_to': 100, 'acceleration_from': 10.0},
-        'динамичный': {'power_from': 180, 'acceleration_to': 7.0},
-        'динамичная': {'power_from': 180, 'acceleration_to': 7.0},
-        'динамичное': {'power_from': 180, 'acceleration_to': 7.0},
-        'динамичные': {'power_from': 180, 'acceleration_to': 7.0},
-        'резвый': {'power_from': 220, 'acceleration_to': 6.5},
-        'резвая': {'power_from': 220, 'acceleration_to': 6.5},
-        'резвое': {'power_from': 220, 'acceleration_to': 6.5},
-        'резвые': {'power_from': 220, 'acceleration_to': 6.5},
-        'проворный': {'power_from': 200, 'acceleration_to': 6.0},
-        'проворная': {'power_from': 200, 'acceleration_to': 6.0},
-        'проворное': {'power_from': 200, 'acceleration_to': 6.0},
-        'проворные': {'power_from': 200, 'acceleration_to': 6.0}
-    }
-    
-    PRICE_CHARACTERISTICS = {
-        'дорогой': {'price_from': 3000000},
-        'дешевый': {'price_to': 1500000},
-        'бюджетный': {'price_to': 2000000},
-        'премиум': {'price_from': 5000000},
-        'люкс': {'price_from': 8000000},
-        'эконом': {'price_to': 1000000},
-        'доступный': {'price_to': 2500000},
-        'недорогой': {'price_to': 1800000}
-    }
-    
-    FUEL_EFFICIENCY_CHARACTERISTICS = {
-        'экономичный': {'fuel_efficiency': 'high'},
-        'экономичная': {'fuel_efficiency': 'high'},
-        'экономичное': {'fuel_efficiency': 'high'},
-        'экономичные': {'fuel_efficiency': 'high'},
-        'неэкономичный': {'fuel_efficiency': 'low'},
-        'неэкономичная': {'fuel_efficiency': 'low'},
-        'неэкономичное': {'fuel_efficiency': 'low'},
-        'неэкономичные': {'fuel_efficiency': 'low'},
-        'прожорливый': {'fuel_efficiency': 'low'},
-        'прожорливая': {'fuel_efficiency': 'low'},
-        'прожорливое': {'fuel_efficiency': 'low'},
-        'прожорливые': {'fuel_efficiency': 'low'},
-        'экономный': {'fuel_efficiency': 'high'},
-        'экономная': {'fuel_efficiency': 'high'},
-        'экономное': {'fuel_efficiency': 'high'},
-        'экономные': {'fuel_efficiency': 'high'},
-        'жадный': {'fuel_efficiency': 'low'},
-        'жадная': {'fuel_efficiency': 'low'},
-        'жадное': {'fuel_efficiency': 'low'},
-        'жадные': {'fuel_efficiency': 'low'},
-        'расходный': {'fuel_efficiency': 'low'},
-        'расходная': {'fuel_efficiency': 'low'},
-        'расходное': {'fuel_efficiency': 'low'},
-        'расходные': {'fuel_efficiency': 'low'}
-    }
-    
-    ENGINE_SIZE_CHARACTERISTICS = {
-        'маленький двигатель': {'engine_vol_from': 0.8, 'engine_vol_to': 1.4},
-        'большой двигатель': {'engine_vol_from': 3.0, 'engine_vol_to': 8.0},
-        'средний двигатель': {'engine_vol_from': 1.4, 'engine_vol_to': 3.0},
-        'малолитражный': {'engine_vol_from': 0.8, 'engine_vol_to': 1.2},
-        'многолитровый': {'engine_vol_from': 4.0, 'engine_vol_to': 8.0}
-    }
-    
-    SPORT_CAR_CHARACTERISTICS = {
-        'спорткар': {'power_from': 300, 'acceleration_to': 5.0, 'body_type': ['купе', 'кабриолет', 'родстер']},
-        'спорткары': {'power_from': 300, 'acceleration_to': 5.0, 'body_type': ['купе', 'кабриолет', 'родстер']},
-        'спортивный': {'power_from': 250, 'acceleration_to': 6.0},
-        'гоночный': {'power_from': 400, 'acceleration_to': 4.0},
-        'трековый': {'power_from': 350, 'acceleration_to': 4.5}
     }
 
     DB_PATH = r'E:\Users\diman\OneDrive\Документы\Рабочий стол\2\хрень — копия\instance\cars.db'
@@ -1286,86 +1200,8 @@ class NERIntentClassifier:
         match = re.search(r'(\d+)\s*мест', ql)
         if match:
             entities['seats'] = int(match.group(1))
-        
-        # Количество мест с "пассажирами"
-        match = re.search(r'(\d+)\s*пассажир', ql)
-        if match:
-            entities['seats'] = int(match.group(1))
-        
-        # Количество мест с "человек"
-        match = re.search(r'(\d+)\s*человек', ql)
-        if match:
-            entities['seats'] = int(match.group(1))
-        
-        # Количество мест с "людей"
-        match = re.search(r'(\d+)\s*людей', ql)
-        if match:
-            entities['seats'] = int(match.group(1))
-        
-        # Количество мест с "для"
-        match = re.search(r'для\s*(\d+)\s*(?:человек|людей|пассажир)', ql)
-        if match:
-            entities['seats'] = int(match.group(1))
-        
-        # Количество мест с "на"
-        match = re.search(r'на\s*(\d+)\s*мест', ql)
-        if match:
-            entities['seats'] = int(match.group(1))
-        
-        # Специальные случаи
         if re.search(r'одного человек', ql):
             entities['seats'] = 1
-        
-        # Прилагательные с числительными (5-местный, пятиместный)
-        match = re.search(r'(\d+)-местн', ql)
-        if match:
-            entities['seats'] = int(match.group(1))
-        
-        # Словесные числительные для мест
-        seats_words = {
-            'одноместн': 1, 'двухместн': 2, 'трехместн': 3, 'четырехместн': 4,
-            'пятиместн': 5, 'шестиместн': 6, 'семиместн': 7, 'восьмиместн': 8,
-            'девятиместн': 9, 'десятиместн': 10,
-            'одно-местн': 1, 'двух-местн': 2, 'трех-местн': 3, 'четырех-местн': 4,
-            'пяти-местн': 5, 'шести-местн': 6, 'семи-местн': 7, 'восьми-местн': 8,
-            'девяти-местн': 9, 'десяти-местн': 10
-        }
-        
-        for word, seats_count in seats_words.items():
-            if word in ql:
-                entities['seats'] = seats_count
-                break
-        
-        # Словесные числительные (пять, пяти, пятью)
-        number_words = {
-            'один': 1, 'одного': 1, 'одному': 1, 'одним': 1, 'одном': 1,
-            'два': 2, 'двух': 2, 'двум': 2, 'двумя': 2, 'двух': 2,
-            'три': 3, 'трех': 3, 'трем': 3, 'тремя': 3, 'трех': 3,
-            'четыре': 4, 'четырех': 4, 'четырем': 4, 'четырьмя': 4, 'четырех': 4,
-            'пять': 5, 'пяти': 5, 'пятью': 5, 'пяти': 5,
-            'шесть': 6, 'шести': 6, 'шестью': 6, 'шести': 6,
-            'семь': 7, 'семи': 7, 'семью': 7, 'семи': 7,
-            'восемь': 8, 'восьми': 8, 'восемью': 8, 'восьми': 8,
-            'девять': 9, 'девяти': 9, 'девятью': 9, 'девяти': 9,
-            'десять': 10, 'десяти': 10, 'десятью': 10, 'десяти': 10
-        }
-        
-        # Поиск словесных числительных в контексте мест
-        for word, number in number_words.items():
-            if re.search(rf'\b{word}\b.*мест', ql) or re.search(rf'мест.*\b{word}\b', ql):
-                entities['seats'] = number
-                break
-        
-        # Дополнительные паттерны для "для X человек/пассажиров"
-        for word, number in number_words.items():
-            # "для пяти человек", "для семи пассажиров"
-            if re.search(rf'для\s+{word}\s+(?:человек|пассажир)', ql):
-                entities['seats'] = number
-                break
-            # "машина для пяти человек", "авто для семи пассажиров"
-            if re.search(rf'(?:машин|авто|автомобиль).*для\s+{word}\s+(?:человек|пассажир)', ql):
-                entities['seats'] = number
-                break
         
         # --- Новые сущности ---
         
@@ -1507,63 +1343,6 @@ class NERIntentClassifier:
             if 'accident_history' in entities:
                 break
         
-        # Скоростные характеристики
-        for speed_char, speed_values in self.SPEED_CHARACTERISTICS.items():
-            if re.search(rf'\b{re.escape(speed_char)}\b', ql):
-                entities.update(speed_values)
-                break
-            # Дополнительная проверка для частичного совпадения (например, "медленную" содержит "медленн")
-            elif re.search(rf'\b{re.escape(speed_char[:6])}\w*', ql):
-                entities.update(speed_values)
-                break
-        
-        # Ценовые характеристики
-        for price_char, price_values in self.PRICE_CHARACTERISTICS.items():
-            if re.search(rf'\b{re.escape(price_char)}\b', ql):
-                entities.update(price_values)
-                break
-        
-        # Характеристики расхода топлива
-        for fuel_char, fuel_values in self.FUEL_EFFICIENCY_CHARACTERISTICS.items():
-            if re.search(rf'\b{re.escape(fuel_char)}\b', ql):
-                entities.update(fuel_values)
-                break
-            # Дополнительная проверка для частичного совпадения
-            elif re.search(rf'\b{re.escape(fuel_char[:6])}\w*', ql):
-                entities.update(fuel_values)
-                break
-        
-        # Характеристики размера двигателя
-        for engine_char, engine_values in self.ENGINE_SIZE_CHARACTERISTICS.items():
-            if re.search(rf'\b{re.escape(engine_char)}\b', ql):
-                entities.update(engine_values)
-                break
-        
-        # Спортивные характеристики
-        for sport_char, sport_values in self.SPORT_CAR_CHARACTERISTICS.items():
-            if re.search(rf'\b{re.escape(sport_char)}\b', ql):
-                entities.update(sport_values)
-                break
-        
-        # --- Ключевые слова: спорткар/спорткары ---
-        # Базовая логика: при упоминании спорткара — повышаем порог мощности
-        if re.search(r'\bспорткар(ы)?\b', ql):
-            # Значения по умолчанию
-            base_power_from = 300
-            # Вариант бюджетного/начального уровня спорткара
-            if re.search(r'(бюджетн|начал|входн)', ql):
-                base_power_from = 200
-            # Вариант супер-/гиперкаров
-            if re.search(r'(суперкар|гиперкар|супер\s*кар|гипер\s*кар)', ql):
-                base_power_from = 500
-            # Устанавливаем нижнюю границу мощности
-            # Не перезаписываем, если пользователь уже указал конкретные рамки
-            if 'power_from' not in entities and 'power_exact' not in entities:
-                entities['power_from'] = base_power_from
-            # Также подскажем спортивные типы кузова, если они ещё не выставлены
-            if 'body_type' not in entities:
-                entities['body_type'] = ['купе', 'кабриолет', 'родстер']
-
         # Парсинг конкретных значений мощности
         power_patterns = [
             r'(\d+)\s*л\.с\.',

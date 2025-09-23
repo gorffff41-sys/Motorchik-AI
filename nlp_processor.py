@@ -202,7 +202,11 @@ def extract_entities_from_text(text):
     # Удаляем дубликаты, сохраняем порядок
     found_colors = list(dict.fromkeys(found_colors))
     entities['colors'] = found_colors
-    entities['color'] = found_colors[0] if found_colors else None  # для обратной совместимости
+    # Если найдено несколько цветов — передаём весь список, иначе одну строку
+    if not found_colors:
+        entities['color'] = None
+    else:
+        entities['color'] = found_colors if len(found_colors) > 1 else found_colors[0]
     print(f"[DEBUG] Найдены цвета: {found_colors}")
     print(f"[DEBUG] Текст для поиска модели после удаления цветов: '{text_clean}'")
 

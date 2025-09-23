@@ -1,0 +1,9 @@
+# Local HTTPS reverse proxy for the FastAPI app
+# Open https://localhost:8443
+
+https://localhost:8443 {
+    # Proxy all requests to the FastAPI server
+    reverse_proxy 127.0.0.1:5000
+}
+
+

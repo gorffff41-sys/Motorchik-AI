@@ -333,7 +333,7 @@
             box-shadow: 0 0 0 2px #6366f1, 0 1px 4px #0001;
             border-color: #6366f1;
         }
-        .send-button, .manager-button {
+        .send-button, .manager-button, .voice-input-button {
             border: none;
             background: #4f46e5;
             color: #fff;
@@ -349,18 +349,18 @@
             transition: background 0.2s, transform 0.2s;
             position: relative;
         }
-        .send-button:hover, .manager-button:hover {
+        .send-button:hover, .manager-button:hover, .voice-input-button:hover {
             background: #6366f1;
             transform: scale(1.08);
         }
-        .manager-button {
+        .manager-button, .voice-input-button {
             background: #10b981;
             margin-left: 4px;
         }
-        .manager-button:hover {
+        .manager-button:hover, .voice-input-button:hover {
             background: #059669;
         }
-        .manager-button[title]:hover::after {
+        .manager-button[title]:hover::after, .voice-input-button[title]:hover::after {
             content: attr(title);
             position: absolute;
             left: 100%;
@@ -1994,6 +1994,9 @@ document.addEventListener('click', async function(e) {
                     <button id="sendButton" class="send-button" title="Отправить">
                         <i class="fas fa-paper-plane"></i>
                     </button>
+                    <button id="voiceInputButton" class="voice-input-button" title="Голосовой ввод" style="display: none;">
+                        <i class="fas fa-microphone"></i>
+                    </button>
                     <button id="managerButton" class="manager-button" title="Вызов менеджера" onclick="callManager()">
                         <i class="fas fa-user-tie"></i>
                     </button>
@@ -2484,12 +2487,15 @@ document.addEventListener('click', async function(e) {
         function setupEventListeners() {
             const chatInput = document.getElementById('chatInput');
             const sendButton = document.getElementById('sendButton');
+            const voiceInputButton = document.getElementById('voiceInputButton');
             const deepSeekButton = document.getElementById('deepSeekButton');
+            
             // Автоматическое изменение высоты поля ввода
             chatInput.addEventListener('input', function() {
                 this.style.height = 'auto';
                 this.style.height = Math.min(this.scrollHeight, 120) + 'px';
             });
+            
             // Отправка по Enter
             chatInput.addEventListener('keypress', function(e) {
                 if (e.key === 'Enter' && !e.shiftKey) {
@@ -2497,8 +2503,50 @@ document.addEventListener('click', async function(e) {
                     sendMessage();
                 }
             });
+            
             // Отправка по кнопке
             sendButton.addEventListener('click', sendMessage);
+            
+            // Долгое нажатие на кнопку отправки
+            let pressTimer;
+            sendButton.addEventListener('mousedown', function() {
+                pressTimer = setTimeout(() => {
+                    voiceInputButton.style.display = 'flex';
+                }, 2000); // 2 секунды
+            });
+            
+            sendButton.addEventListener('mouseup', function() {
+                clearTimeout(pressTimer);
+            });
+            
+            sendButton.addEventListener('mouseleave', function() {
+                clearTimeout(pressTimer);
+            });
+
+            // Динамическое поведение кнопки отправки: микрофон при пустом поле, самолетик при тексте
+            // chatInput уже объявлен выше в этой области видимости
+            function updateSendButtonState() {
+                const hasText = chatInput.value.trim().length > 0;
+                if (hasText) {
+                    sendButton.title = 'Отправить';
+                    sendButton.innerHTML = '<i class="fas fa-paper-plane"></i>';
+                    sendButton.onclick = async () => { await sendMessage(); };
+                } else {
+                    sendButton.title = 'Голосовой ввод';
+                    sendButton.innerHTML = '<i class="fas fa-microphone"></i>';
+                    sendButton.onclick = () => { startVoiceInput(); };
+                }
+            }
+            chatInput.addEventListener('input', updateSendButtonState);
+            // Инициализируем состояние при загрузке
+            updateSendButtonState();
+
+            // Отдельная кнопка голосового ввода (если отображается)
+            voiceInputButton.addEventListener('click', function() {
+                startVoiceInput();
+                this.style.display = 'none';
+            });
+            
             // Кнопка менеджера теперь обрабатывается через onclick="callManager()"
             // Закрытие модального окна
             window.onclick = function(event) {
@@ -5967,6 +6015,40 @@ if (lastEntities && typeof lastEntities === 'object') {
     }
     </style>
     <script>
+        // Функция для голосового ввода
+        function startVoiceInput() {
+            if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+                addMessage('Ваш браузер не поддерживает голосовой ввод', 'assistant');
+                return;
+            }
+
+            const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+            const recognition = new SR();
+            recognition.lang = 'ru-RU';
+            recognition.interimResults = false;
+
+            recognition.onstart = function() {
+                addMessage('🎤 Говорите сейчас...', 'assistant');
+            };
+
+            recognition.onresult = async function(event) {
+                const transcript = event.results[0][0].transcript;
+                const chatInput = document.getElementById('chatInput');
+                chatInput.value = transcript;
+                // Автоотправка распознанного текста как обычного сообщения
+                await sendMessage();
+            };
+
+            recognition.onerror = function(event) {
+                addMessage('❌ Ошибка распознавания: ' + event.error, 'assistant');
+            };
+
+            recognition.onend = function() {
+                // конец распознавания
+            };
+
+            recognition.start();
+        }
         // --- Функция создания улучшенного кредитного калькулятора ---
         function createInlineCreditCalculator(carPrice = 1500000, carName = 'автомобиля') {
             const calculatorId = 'credit-calc-' + Date.now();

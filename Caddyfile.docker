@@ -1,0 +1,13 @@
+# Caddy in Docker, reverse proxy to host FastAPI at 5000
+
+https://localhost:8443 {
+    reverse_proxy host.docker.internal:5000
+}
+
+
+
+
+
+
+
+

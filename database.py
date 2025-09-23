@@ -1013,7 +1013,11 @@ def _search_cars_with_filters(
     owners_from: Optional[int] = None,
     owners_to: Optional[int] = None,
     steering_wheel: Optional[str] = None,
-    accident_history: Optional[str] = None
+    accident_history: Optional[str] = None,
+    # Параметры производительности
+    acceleration_from: Optional[float] = None,
+    acceleration_to: Optional[float] = None,
+    fuel_efficiency: Optional[str] = None
 ) -> list:
     print(f"[search_all_cars] Входящие параметры: brand={brand}, model={model}, year_from={year_from}, year_to={year_to}, price_from={price_from}, price_to={price_to}, fuel_type={fuel_type}, transmission={transmission}, body_type={body_type}, drive_type={drive_type}, state={state}, sort_by={sort_by}, sort_order={sort_order}, option_code={option_code}, option_description={option_description}, city={city}")
     import logging
@@ -1266,6 +1270,10 @@ def _search_cars_with_filters(
         params_used.append(owners_to)
     
     # Тип руля и история аварий пока не поддерживаются в базе данных
+    # Эти поля нужно будет добавить в схему базы данных
+    
+    # --- Фильтры производительности ---
+    # Примечание: acceleration_from, acceleration_to, fuel_efficiency пока не поддерживаются в базе данных
     # Эти поля нужно будет добавить в схему базы данных
     
     # --- Добавляю фильтрацию по городу ---
@@ -2020,8 +2028,14 @@ def search_all_cars(
     mileage_to: Optional[int] = None,
     mileage_exact: Optional[int] = None,
     owners_count: Optional[int] = None,
+    owners_from: Optional[int] = None,
+    owners_to: Optional[int] = None,
     steering_wheel: Optional[str] = None,
-    accident_history: Optional[str] = None
+    accident_history: Optional[str] = None,
+    # Параметры производительности
+    acceleration_from: Optional[float] = None,
+    acceleration_to: Optional[float] = None,
+    fuel_efficiency: Optional[str] = None
 ) -> list:
     return _search_cars_with_filters(
         brand=brand, model=model, year_from=year_from, year_to=year_to,
@@ -2029,6 +2043,12 @@ def search_all_cars(
         transmission=transmission, body_type=body_type, drive_type=drive_type,
         state=state, sort_by=sort_by, sort_order=sort_order,
         option_code=option_code, option_description=option_description,
-        city=city, color=color, seats=seats, limit=limit
+        city=city, color=color, seats=seats, limit=limit,
+        power_from=power_from, power_to=power_to, power_exact=power_exact,
+        engine_vol_from=engine_vol_from, engine_vol_to=engine_vol_to, engine_vol_exact=engine_vol_exact,
+        mileage_from=mileage_from, mileage_to=mileage_to, mileage_exact=mileage_exact,
+        owners_count=owners_count, owners_from=owners_from, owners_to=owners_to,
+        steering_wheel=steering_wheel, accident_history=accident_history,
+        acceleration_from=acceleration_from, acceleration_to=acceleration_to, fuel_efficiency=fuel_efficiency
     )
 

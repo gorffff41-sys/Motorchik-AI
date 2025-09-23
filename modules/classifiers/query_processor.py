@@ -311,6 +311,11 @@ class SearchModule:
             filters['power_from'] = entities.get('power_from')
         if entities.get('power_to') is not None:
             filters['power_to'] = entities.get('power_to')
+        # Пробег: пробрасываем в БД
+        if entities.get('mileage_from') is not None:
+            filters['mileage_from'] = entities.get('mileage_from')
+        if entities.get('mileage_to') is not None:
+            filters['mileage_to'] = entities.get('mileage_to')
         # Обработка цвета: поддержка списка цветов и ключа 'colors'
         color_entity = entities.get('color')
         colors_list = entities.get('colors')
@@ -1182,6 +1187,213 @@ class UniversalQueryProcessor:
                 entities['model'] = entities['model'].get('en') or list(entities['model'].values())[0]
         # --- Исправление color_in_db ---
         # Найти и заменить все color_in_db на color (или удалить, если не используется)
+        # --- ДОБАВЛЕНО: Парсинг мощности (л.с.) ---
+        ql = query.lower()
+        # Диапазон: "от X до Y л.с." или "X- Y л.с."
+        m = re.search(r"от\s*(\d+)\s*л?\.?с?\.?\s*(?:до|[-—])\s*(\d+)\s*л?\.?с?\.?", ql)
+        if m:
+            try:
+                entities['power_from'] = int(m.group(1))
+                entities['power_to'] = int(m.group(2))
+            except Exception:
+                pass
+        else:
+            m = re.search(r"(\d+)\s*[-—]\s*(\d+)\s*л?\.?с?\.?", ql)
+            if m:
+                try:
+                    entities['power_from'] = int(m.group(1))
+                    entities['power_to'] = int(m.group(2))
+                except Exception:
+                    pass
+        # Нижняя/верхняя граница: "от X л.с.", "до X л.с.", точное: "X л.с."
+        m = re.search(r"от\s*(\d+)\s*л?\.?с?\.?", ql)
+        if m:
+            try:
+                entities.setdefault('power_from', int(m.group(1)))
+            except Exception:
+                pass
+        m = re.search(r"до\s*(\d+)\s*л?\.?с?\.?", ql)
+        if m:
+            try:
+                entities.setdefault('power_to', int(m.group(1)))
+            except Exception:
+                pass
+        m = re.search(r"(\d+)\s*л\.?с\.?", ql)
+        if m and not (entities.get('power_from') or entities.get('power_to')):
+            try:
+                entities['power_exact'] = int(m.group(1))
+            except Exception:
+                pass
+
+        # --- ДОБАВЛЕНО: Парсинг пробега ---
+        def _to_km(val_str: str, text: str) -> int:
+            val = int(val_str)
+            # Если рядом есть "тыс"/"тысяч" — умножаем на 1000
+            if re.search(r"тыс|тысяч", text):
+                return val * 1000
+            return val
+
+        # Диапазоны пробега: "пробег от X до Y", "X - Y (тыс) км"
+        m = re.search(r"пробег[^\d]{0,10}от\s*(\d+)\s*(?:тыс|тысяч)?\s*(?:км)?\s*(?:до|[-—])\s*(\d+)\s*(?:тыс|тысяч)?\s*(?:км)?", ql)
+        if m:
+            try:
+                left = _to_km(m.group(1), m.group(0))
+                right = _to_km(m.group(2), m.group(0))
+                entities['mileage_from'] = left
+                entities['mileage_to'] = right
+            except Exception:
+                pass
+        else:
+            m = re.search(r"(\d+)\s*[-—]\s*(\d+)\s*(?:тыс|тысяч)?\s*(?:км)", ql)
+            if m:
+                try:
+                    left = _to_km(m.group(1), m.group(0))
+                    right = _to_km(m.group(2), m.group(0))
+                    entities['mileage_from'] = left
+                    entities['mileage_to'] = right
+                except Exception:
+                    pass
+        # Границы: "пробег от X", "пробег до X"
+        m = re.search(r"пробег[^\d]{0,10}от\s*(\d+)\s*(?:тыс|тысяч)?\s*(?:км)?", ql)
+        if m:
+            try:
+                entities.setdefault('mileage_from', _to_km(m.group(1), m.group(0)))
+            except Exception:
+                pass
+        m = re.search(r"пробег[^\d]{0,10}до\s*(\d+)\s*(?:тыс|тысяч)?\s*(?:км)?", ql)
+        if m:
+            try:
+                entities.setdefault('mileage_to', _to_km(m.group(1), m.group(0)))
+            except Exception:
+                pass
+
+        # --- ДОБАВЛЕНО: Парсинг цены (₽) ---
+        def _to_rub(val_str: str, text: str) -> int:
+            # Поддержка пробелов и разделителей
+            s = val_str.replace(' ', '').replace('\u00A0', '')
+            try:
+                val = int(s)
+            except Exception:
+                # Если формат типа 1.5 млн
+                try:
+                    val = int(float(s.replace(',', '.')))
+                except Exception:
+                    val = 0
+            if re.search(r"млн|миллион", text):
+                return int(val * 1_000_000)
+            if re.search(r"тыс|тысяч", text):
+                return int(val * 1_000)
+            return val
+
+        # Диапазон: от X до Y ₽ | X - Y ₽
+        m = re.search(r"(цена|стоимость)?\s*от\s*([\d\s,.]+)\s*(?:тыс|тысяч|млн|миллион)?\s*(?:₽|руб|рублей)?\s*(?:до|[-—])\s*([\d\s,.]+)\s*(?:тыс|тысяч|млн|миллион)?\s*(?:₽|руб|рублей)?", ql)
+        if m:
+            try:
+                entities['price_from'] = _to_rub(m.group(2), m.group(0))
+                entities['price_to'] = _to_rub(m.group(3), m.group(0))
+            except Exception:
+                pass
+        else:
+            m = re.search(r"([\d\s,.]+)\s*[-—]\s*([\d\s,.]+)\s*(?:тыс|тысяч|млн|миллион)?\s*(?:₽|руб|рублей)", ql)
+            if m:
+                try:
+                    entities['price_from'] = _to_rub(m.group(1), m.group(0))
+                    entities['price_to'] = _to_rub(m.group(2), m.group(0))
+                except Exception:
+                    pass
+        # Границы: от X ₽, до X ₽, точная цена X ₽
+        m = re.search(r"от\s*([\d\s,.]+)\s*(?:тыс|тысяч|млн|миллион)?\s*(?:₽|руб|рублей)", ql)
+        if m:
+            try:
+                entities.setdefault('price_from', _to_rub(m.group(1), m.group(0)))
+            except Exception:
+                pass
+        m = re.search(r"до\s*([\d\s,.]+)\s*(?:тыс|тысяч|млн|миллион)?\s*(?:₽|руб|рублей)", ql)
+        if m:
+            try:
+                entities.setdefault('price_to', _to_rub(m.group(1), m.group(0)))
+            except Exception:
+                pass
+
+        # --- ДОБАВЛЕНО: Парсинг годов выпуска ---
+        m = re.search(r"год[а]?\s*от\s*(\d{4})\s*(?:до|[-—])\s*(\d{4})", ql)
+        if m:
+            entities['year_from'] = int(m.group(1))
+            entities['year_to'] = int(m.group(2))
+        else:
+            m = re.search(r"(\d{4})\s*[-—]\s*(\d{4})", ql)
+            if m:
+                entities['year_from'] = int(m.group(1))
+                entities['year_to'] = int(m.group(2))
+        m = re.search(r"год[а]?\s*от\s*(\d{4})", ql)
+        if m:
+            entities.setdefault('year_from', int(m.group(1)))
+        m = re.search(r"год[а]?\s*до\s*(\d{4})", ql)
+        if m:
+            entities.setdefault('year_to', int(m.group(1)))
+
+        # --- ДОБАВЛЕНО: Парсинг объёма двигателя (л) ---
+        def _to_liters(s: str) -> float:
+            s = s.replace(' ', '').replace(',', '.')
+            try:
+                return float(s)
+            except Exception:
+                return 0.0
+        m = re.search(r"объ[её]м\s*двигател[яя]?\s*от\s*([\d.,]+)\s*л\.?\s*(?:до|[-—])\s*([\d.,]+)\s*л\.?", ql)
+        if m:
+            entities['engine_vol_from'] = _to_liters(m.group(1))
+            entities['engine_vol_to'] = _to_liters(m.group(2))
+        else:
+            m = re.search(r"([\d.,]+)\s*[-—]\s*([\d.,]+)\s*л\.?", ql)
+            if m:
+                entities['engine_vol_from'] = _to_liters(m.group(1))
+                entities['engine_vol_to'] = _to_liters(m.group(2))
+        m = re.search(r"объ[её]м\s*двигател[яя]?\s*от\s*([\d.,]+)\s*л\.?", ql)
+        if m:
+            entities.setdefault('engine_vol_from', _to_liters(m.group(1)))
+        m = re.search(r"объ[её]м\s*двигател[яя]?\s*до\s*([\d.,]+)\s*л\.?", ql)
+        if m:
+            entities.setdefault('engine_vol_to', _to_liters(m.group(1)))
+        m = re.search(r"(\d(?:[\d.,])*)\s*л\.?\s*(?:двигател[ья])?", ql)
+        if m and not (entities.get('engine_vol_from') or entities.get('engine_vol_to')):
+            entities['engine_vol_exact'] = _to_liters(m.group(1))
+
+        # --- ДОБАВЛЕНО: Кол-во мест / владельцев ---
+        m = re.search(r"(\d+)\s*мест", ql)
+        if m:
+            entities['seats'] = int(m.group(1))
+        m = re.search(r"(\d+)\s*владельц", ql)
+        if m:
+            entities['owners_count'] = int(m.group(1))
+        m = re.search(r"владельц[^\d]{0,10}от\s*(\d+)", ql)
+        if m:
+            entities['owners_from'] = int(m.group(1))
+        m = re.search(r"владельц[^\d]{0,10}до\s*(\d+)", ql)
+        if m:
+            entities['owners_to'] = int(m.group(1))
+
+        # --- ДОБАВЛЕНО: Разгон 0-100 (сек) ---
+        def _to_sec(s: str) -> float:
+            s = s.replace(',', '.')
+            try:
+                return float(s)
+            except Exception:
+                return 0.0
+        m = re.search(r"разгон[^\d]{0,10}от\s*([\d.,]+)\s*с\.?\s*(?:до|[-—])\s*([\d.,]+)\s*с\.?", ql)
+        if m:
+            entities['acceleration_from'] = _to_sec(m.group(1))
+            entities['acceleration_to'] = _to_sec(m.group(2))
+        else:
+            m = re.search(r"([\d.,]+)\s*[-—]\s*([\d.,]+)\s*с\.?", ql)
+            if m:
+                entities['acceleration_from'] = _to_sec(m.group(1))
+                entities['acceleration_to'] = _to_sec(m.group(2))
+        m = re.search(r"разгон[^\d]{0,10}до\s*([\d.,]+)\s*с\.?", ql)
+        if m:
+            entities.setdefault('acceleration_to', _to_sec(m.group(1)))
+        m = re.search(r"разгон[^\d]{0,10}от\s*([\d.,]+)\s*с\.?", ql)
+        if m:
+            entities.setdefault('acceleration_from', _to_sec(m.group(1)))
         return entities
     def process(self, query: str, entities: dict, user_id: str = 'default', offset: int = 0, limit: int = 10, show_cars: bool = False) -> dict:
         from llama_service import generate_with_llama
@@ -1236,6 +1448,52 @@ class UniversalQueryProcessor:
                 print(f"[DEBUG] Ошибка сравнения: {compare_result.get('message')}")
                 return compare_result
         
+        # --- РАСПОЗНАВАНИЕ ТИПА ФРАЗЫ ДЛЯ МАРШРУТИЗАЦИИ (DB vs Llama) ---
+        # Командные фразы для БД: "найди", "покажи", "подбери", а также когда явно заданы численные фильтры (power/mileage)
+        is_command = any(w in ql for w in ['найди', 'покажи', 'подбери', 'подберите', 'подобери'])
+        has_numeric_filters = any(entities.get(k) is not None for k in ['power_from', 'power_to', 'power_exact', 'mileage_from', 'mileage_to'])
+        # Вопросный формат для Llama подбора сущностей: "какие машины есть ..." без строгих фильтров
+        is_question_list = (('какие' in ql and 'есть' in ql and ('машин' in ql or 'авто' in ql)))
+
+        # Если командный или есть численные фильтры → сразу БД
+        if is_command or has_numeric_filters:
+            local_result = self.search.process(query, entities, context, offset=offset, limit=limit, show_cars=show_cars)
+            if local_result.get('cars'):
+                local_result['message'] = 'Результат из базы данных.'
+                return local_result
+            # Если БД не нашла — продолжаем обычным путём
+        else:
+            # Если вопросный формат без фильтров → Llama: предложить 3-5 разных по марке и модели
+            if is_question_list and not has_numeric_filters:
+                try:
+                    from database import search_all_cars
+                    all_cars = search_all_cars(limit=200)
+                    # Выбираем 3-5 разных по марке и модели
+                    seen_pairs = set()
+                    picked = []
+                    for c in all_cars:
+                        pair = (str(c.get('mark','')).lower(), str(c.get('model','')).lower())
+                        if pair in seen_pairs or not pair[0] or not pair[1]:
+                            continue
+                        seen_pairs.add(pair)
+                        picked.append(c)
+                        if len(picked) >= 5:
+                            break
+                    from llama_service import generate_with_llama
+                    cars_lines = '\n'.join([f"- {c.get('mark','')} {c.get('model','')} ({c.get('manufacture_year','')})" for c in picked])
+                    prompt = (
+                        f"Пользователь спросил: '{query}'. Подбери 3-5 примеров разных по марке и модели из списка ниже и кратко предложи их. Всегда отвечай на русском.\n" 
+                        f"Список: \n{cars_lines}\n"
+                    )
+                    llm_answer = generate_with_llama(prompt)
+                    return {
+                        'type': 'llama_response',
+                        'message': llm_answer,
+                        'cars': picked,
+                        'entities': entities
+                    }
+                except Exception:
+                    pass
         # --- СНАЧАЛА ЛОКАЛЬНЫЙ ПОИСК ---
         local_result = self.search.process(query, entities, context, offset=offset, limit=limit, show_cars=show_cars)
         print(f"[DEBUG] Local result type: {type(local_result)}")

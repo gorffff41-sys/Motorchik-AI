@@ -1,5 +1,5 @@
 from fastapi import FastAPI, HTTPException, Request, Body, Query, Path, Header, Depends
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -9,6 +9,7 @@ import json
 import logging
 from datetime import datetime, timedelta
 import os
+import tempfile
 import time
 from starlette.status import HTTP_401_UNAUTHORIZED
 import secrets
@@ -1221,6 +1222,159 @@ async def llama_feedback(request: LlamaFeedbackRequest):
     except Exception as e:
         return {"success": False, "error": str(e)}
 
+@app.post("/api/voice-message")
+async def process_voice_message(request: Request):
+    """Обработка голосовых сообщений с локальной транскрипцией через faster-whisper"""
+    try:
+        # Получаем данные из FormData
+        form = await request.form()
+        audio_file = form.get("audio")
+        duration = form.get("duration", "0")
+        user_id = form.get("user_id", "default")
+        client_transcription = form.get("transcription", "").strip()
+
+        if not audio_file:
+            raise HTTPException(status_code=400, detail="Аудио файл не найден")
+
+        # Создаем папку для голосовых сообщений
+        voice_dir = "voice_messages"
+        os.makedirs(voice_dir, exist_ok=True)
+
+        # Генерируем уникальное имя файла
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"voice_{user_id}_{timestamp}.wav"
+        filepath = os.path.join(voice_dir, filename)
+
+        # Сохраняем аудио файл
+        content = await audio_file.read()
+        with open(filepath, "wb") as f:
+            f.write(content)
+
+        # Транскрипция через faster-whisper
+        try:
+            from faster_whisper import WhisperModel
+            # Выбор модели: small / medium / large-v3 (по ресурсам)
+            model_size = os.getenv("WHISPER_MODEL", "small")
+            compute_type = os.getenv("WHISPER_COMPUTE", "int8")  # int8/int8_float16/float16
+            model = WhisperModel(model_size, device="auto", compute_type=compute_type)
+
+            segments, info = model.transcribe(filepath, language="ru", vad_filter=True)
+            transcript_parts = [seg.text for seg in segments]
+            server_transcription = (" ".join(transcript_parts)).strip()
+        except Exception as tr_err:
+            logger.error(f"Ошибка транскрипции faster-whisper: {tr_err}")
+            server_transcription = client_transcription  # fallback
+
+        final_transcription = server_transcription or client_transcription or ""
+
+        # Сохраняем информацию о голосовом сообщении в БД
+        try:
+            with get_db() as conn:
+                cursor = conn.cursor()
+                cursor.execute(
+                    """
+                    CREATE TABLE IF NOT EXISTS voice_messages (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        user_id TEXT NOT NULL,
+                        filename TEXT NOT NULL,
+                        duration INTEGER NOT NULL,
+                        transcription TEXT,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    )
+                    """
+                )
+                cursor.execute(
+                    """
+                    INSERT INTO voice_messages (user_id, filename, duration, transcription)
+                    VALUES (?, ?, ?, ?)
+                    """,
+                    (user_id, filename, int(duration or 0), final_transcription),
+                )
+                conn.commit()
+        except Exception as db_error:
+            logger.error(f"Ошибка сохранения в БД: {db_error}")
+
+        logger.info(f"Голос сохранен: {filename}, длит.: {duration}с, текст: {final_transcription[:80]}...")
+
+        return JSONResponse(
+            content={
+                "success": True,
+                "filename": filename,
+                "duration": int(duration or 0),
+                "transcription": final_transcription,
+                "message": "Голосовое сообщение успешно обработано"
+            }
+        )
+
+    except Exception as e:
+        logger.error(f"Ошибка обработки голосового сообщения: {e}")
+        return JSONResponse(status_code=500, content={"success": False, "error": str(e)})
+
+@app.get("/api/voice-messages/{user_id}")
+async def get_voice_messages(user_id: str):
+    """Получение голосовых сообщений пользователя"""
+    try:
+        with get_db() as conn:
+            cursor = conn.cursor()
+            # Гарантируем наличие таблицы
+            cursor.execute(
+                """
+                CREATE TABLE IF NOT EXISTS voice_messages (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id TEXT NOT NULL,
+                    filename TEXT NOT NULL,
+                    duration INTEGER NOT NULL,
+                    transcription TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+                """
+            )
+            cursor.execute("""
+                SELECT id, filename, duration, transcription, created_at
+                FROM voice_messages
+                WHERE user_id = ?
+                ORDER BY created_at DESC
+                LIMIT 50
+            """, (user_id,))
+            
+            messages = []
+            for row in cursor.fetchall():
+                messages.append({
+                    "id": row[0],
+                    "filename": row[1],
+                    "duration": row[2],
+                    "transcription": row[3],
+                    "created_at": row[4]
+                })
+            
+            return JSONResponse(content={
+                "success": True,
+                "messages": messages
+            })
+            
+    except Exception as e:
+        logger.error(f"Ошибка получения голосовых сообщений: {e}")
+        return JSONResponse(
+            status_code=500,
+            content={"success": False, "error": str(e)}
+        )
+
+@app.get("/api/voice-messages/audio/{filename}")
+async def get_voice_audio(filename: str):
+    """Получение аудио файла голосового сообщения"""
+    try:
+        voice_dir = "voice_messages"
+        filepath = os.path.join(voice_dir, filename)
+        
+        if not os.path.exists(filepath):
+            raise HTTPException(status_code=404, detail="Аудио файл не найден")
+        
+        return FileResponse(filepath, media_type="audio/wav")
+        
+    except Exception as e:
+        logger.error(f"Ошибка получения аудио файла: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.get("/api/monitoring/report")
 async def monitoring_report():
     """Отчёт мониторинга для dashboard (включая llama_feedback)"""
@@ -1916,12 +2070,14 @@ async def get_analytics():
 
 @app.get("/api/body_types")
 async def get_body_types():
-    uniques = get_all_unique_values_lower()
-    # Получаем оригинальные значения (не приведенные к нижнему регистру)
-    from database import get_all_unique_values_original
-    original_values = get_all_unique_values_original()
-    types = normalize_filter_values(original_values.get('body_type', []), 'body_type')
-    return {"body_types": types}
+    try:
+        from database import get_all_unique_values
+        original_values = get_all_unique_values()
+        types = normalize_filter_values(original_values.get('body_type', []), 'body_type')
+        return {"body_types": types}
+    except Exception as e:
+        logger.error(f"Ошибка получения типов кузова: {e}")
+        return {"body_types": []}
 
 # Функция для нормализации значений фильтров
 def normalize_filter_values(field_values, field_type):
@@ -2000,30 +2156,36 @@ def normalize_filter_values(field_values, field_type):
 
 @app.get("/api/fuel_types")
 async def get_fuel_types():
-    uniques = get_all_unique_values_lower()
-    # Получаем оригинальные значения (не приведенные к нижнему регистру)
-    from database import get_all_unique_values_original
-    original_values = get_all_unique_values_original()
-    types = normalize_filter_values(original_values.get('fuel_type', []), 'fuel_type')
-    return {"fuel_types": types}
+    try:
+        from database import get_all_unique_values
+        original_values = get_all_unique_values()
+        types = normalize_filter_values(original_values.get('fuel_type', []), 'fuel_type')
+        return {"fuel_types": types}
+    except Exception as e:
+        logger.error(f"Ошибка получения типов топлива: {e}")
+        return {"fuel_types": []}
 
 @app.get("/api/gear_box_types")
 async def get_gear_box_types():
-    uniques = get_all_unique_values_lower()
-    # Получаем оригинальные значения (не приведенные к нижнему регистру)
-    from database import get_all_unique_values_original
-    original_values = get_all_unique_values_original()
-    types = normalize_filter_values(original_values.get('gear_box_type', []), 'gear_box_type')
-    return {"gear_box_types": types}
+    try:
+        from database import get_all_unique_values
+        original_values = get_all_unique_values()
+        types = normalize_filter_values(original_values.get('gear_box_type', []), 'gear_box_type')
+        return {"gear_box_types": types}
+    except Exception as e:
+        logger.error(f"Ошибка получения типов трансмиссии: {e}")
+        return {"gear_box_types": []}
 
 @app.get("/api/driving_gear_types")
 async def get_driving_gear_types():
-    uniques = get_all_unique_values_lower()
-    # Получаем оригинальные значения (не приведенные к нижнему регистру)
-    from database import get_all_unique_values_original
-    original_values = get_all_unique_values_original()
-    types = normalize_filter_values(original_values.get('driving_gear_type', []), 'driving_gear_type')
-    return {"driving_gear_types": types}
+    try:
+        from database import get_all_unique_values
+        original_values = get_all_unique_values()
+        types = normalize_filter_values(original_values.get('driving_gear_type', []), 'driving_gear_type')
+        return {"driving_gear_types": types}
+    except Exception as e:
+        logger.error(f"Ошибка получения типов привода: {e}")
+        return {"driving_gear_types": []}
 
 @app.get("/api/years")
 async def get_years():

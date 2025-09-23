@@ -115,6 +115,9 @@ class AutoSearchProcessor:
             # Извлекаем сущности из запроса
             entities = self.ner_classifier.extract_entities(query)
             
+            # Добавляем текст запроса в сущности для обработки качественных характеристик
+            entities['query'] = query
+            
             # Проверяем, является ли это запросом о количестве
             is_count_query = self._is_count_query(query)
             
@@ -140,6 +143,8 @@ class AutoSearchProcessor:
             fallback_applied = False
             fallback_criteria_desc = ''
             if not cars and self._should_try_combinational_search(query, entities):
+                # Добавляем текст запроса в сущности для обработки качественных характеристик
+                entities['query'] = query
                 fallback_result = self._fallback_combinational_search(entities)
                 cars = fallback_result.get('cars', [])
                 fallback_criteria_desc = fallback_result.get('criteria_desc', '')
@@ -219,6 +224,8 @@ class AutoSearchProcessor:
                 params[k] = entities.get(k)
             # Ограничение результатов
             params['limit'] = 20
+            # Обработка качественных характеристик
+            self._process_qualitative_characteristics(entities, params)
             return params
 
         tried = 0
@@ -353,10 +360,82 @@ class AutoSearchProcessor:
         if entities.get('year_to'):
             params['year_to'] = entities['year_to']
         
+        # Обработка качественных характеристик
+        self._process_qualitative_characteristics(entities, params)
+        
         # Ограничение результатов
         params['limit'] = 20
         
         return params
+    
+    def _process_qualitative_characteristics(self, entities: Dict[str, Any], params: Dict[str, Any]) -> None:
+        """
+        Обрабатывает качественные характеристики автомобилей (быстрый, медленный, дорогой, дешевый, спорткар)
+        """
+        # Получаем текст запроса для анализа
+        query = entities.get('query', '').lower()
+        
+        # Обработка характеристик скорости
+        if 'быстрый' in query or 'быстрая' in query or 'быстро' in query:
+            # Быстрые автомобили: высокая мощность и спортивные кузова
+            if not params.get('power_from'):
+                params['power_from'] = 200  # Минимум 200 л.с. для быстрых авто
+            if not params.get('body_type'):
+                # Добавляем спортивные типы кузова
+                sporty_bodies = ['купе', 'кабриолет', 'родстер']
+                params['body_type'] = sporty_bodies
+        
+        elif 'медленный' in query or 'медленная' in query or 'медленно' in query:
+            # Медленные автомобили: низкая мощность
+            if not params.get('power_to'):
+                params['power_to'] = 150  # Максимум 150 л.с. для медленных авто
+        
+        # Обработка характеристик цены
+        if 'дорогой' in query or 'дорогая' in query or 'дорого' in query:
+            # Дорогие автомобили: высокая цена
+            if not params.get('price_from'):
+                params['price_from'] = 3000000  # Минимум 3 млн рублей
+        
+        elif 'дешевый' in query or 'дешевая' in query or 'дешево' in query:
+            # Дешевые автомобили: низкая цена
+            if not params.get('price_to'):
+                params['price_to'] = 1500000  # Максимум 1.5 млн рублей
+        
+        # Обработка спорткаров
+        if 'спорткар' in query or 'спорткары' in query or 'спорткара' in query or 'спорткаров' in query:
+            # Спорткары: высокая мощность и спортивные кузова
+            if not params.get('power_from'):
+                params['power_from'] = 300  # Минимум 300 л.с. для спорткаров
+            if not params.get('body_type'):
+                # Добавляем спортивные типы кузова
+                sporty_bodies = ['купе', 'кабриолет', 'родстер']
+                params['body_type'] = sporty_bodies
+        
+        # Обработка экономичных автомобилей
+        if 'экономичный' in query or 'экономичная' in query or 'экономично' in query:
+            # Экономичные автомобили: низкая мощность и малый объем двигателя
+            if not params.get('power_to'):
+                params['power_to'] = 120  # Максимум 120 л.с. для экономичных авто
+            if not params.get('engine_vol_to'):
+                params['engine_vol_to'] = 1.6  # Максимум 1.6 л для экономичных авто
+        
+        # Обработка семейных автомобилей
+        if 'семейный' in query or 'семейная' in query or 'семейное' in query:
+            # Семейные автомобили: много мест и практичные кузова
+            if not params.get('seats'):
+                params['seats'] = 5  # Минимум 5 мест для семейных авто
+            if not params.get('body_type'):
+                # Добавляем практичные типы кузова
+                family_bodies = ['седан', 'универсал', 'хэтчбек', 'внедорожник']
+                params['body_type'] = family_bodies
+        
+        # Обработка внедорожников
+        if 'внедорожник' in query or 'внедорожники' in query or 'внедорожника' in query or 'внедорожников' in query:
+            # Внедорожники: полный привод и высокий клиренс
+            if not params.get('drive_type'):
+                params['drive_type'] = 'полный'
+            if not params.get('body_type'):
+                params['body_type'] = 'внедорожник'
     
     def _format_cars(self, cars: List[Dict]) -> List[Dict]:
         """
@@ -507,6 +586,30 @@ class AutoSearchProcessor:
         is_sportcar = self._is_sportcar_query(query, entities)
         sportcar_label = self._get_sportcar_label(total_found)
         
+        # Обработка качественных характеристик
+        query_lower = query.lower()
+        if 'быстрый' in query_lower or 'быстрая' in query_lower or 'быстро' in query_lower:
+            found_desc.append("быстрые")
+        elif 'медленный' in query_lower or 'медленная' in query_lower or 'медленно' in query_lower:
+            found_desc.append("медленные")
+        
+        if 'дорогой' in query_lower or 'дорогая' in query_lower or 'дорого' in query_lower:
+            found_desc.append("дорогие")
+        elif 'дешевый' in query_lower or 'дешевая' in query_lower or 'дешево' in query_lower:
+            found_desc.append("дешевые")
+        
+        if 'спорткар' in query_lower or 'спорткары' in query_lower or 'спорткара' in query_lower or 'спорткаров' in query_lower:
+            found_desc.append("спорткары")
+        
+        if 'экономичный' in query_lower or 'экономичная' in query_lower or 'экономично' in query_lower:
+            found_desc.append("экономичные")
+        
+        if 'семейный' in query_lower or 'семейная' in query_lower or 'семейное' in query_lower:
+            found_desc.append("семейные")
+        
+        if 'внедорожник' in query_lower or 'внедорожники' in query_lower or 'внедорожника' in query_lower or 'внедорожников' in query_lower:
+            found_desc.append("внедорожники")
+        
         if entities.get('brand'):
             brand = entities['brand']
             if isinstance(brand, dict):
@@ -551,6 +654,31 @@ class AutoSearchProcessor:
     def _describe_filters_brief(self, entities: Dict[str, Any]) -> str:
         """Коротко описывает, какие фильтры могли слишком сузить выбор."""
         applied = []
+        
+        # Обработка качественных характеристик
+        query = entities.get('query', '').lower()
+        if 'быстрый' in query or 'быстрая' in query or 'быстро' in query:
+            applied.append("высокие требования к скорости")
+        elif 'медленный' in query or 'медленная' in query or 'медленно' in query:
+            applied.append("низкие требования к скорости")
+        
+        if 'дорогой' in query or 'дорогая' in query or 'дорого' in query:
+            applied.append("высокие требования к цене")
+        elif 'дешевый' in query or 'дешевая' in query or 'дешево' in query:
+            applied.append("низкие требования к цене")
+        
+        if 'спорткар' in query or 'спорткары' in query or 'спорткара' in query or 'спорткаров' in query:
+            applied.append("строгие критерии спорткаров")
+        
+        if 'экономичный' in query or 'экономичная' in query or 'экономично' in query:
+            applied.append("строгие критерии экономичности")
+        
+        if 'семейный' in query or 'семейная' in query or 'семейное' in query:
+            applied.append("строгие критерии семейности")
+        
+        if 'внедорожник' in query or 'внедорожники' in query or 'внедорожника' in query or 'внедорожников' in query:
+            applied.append("строгие критерии внедорожников")
+        
         if entities.get('brand') and entities.get('model'):
             applied.append("узкая связка марки и модели")
         elif entities.get('brand'):
@@ -581,6 +709,30 @@ class AutoSearchProcessor:
         year_from = entities.get('year_from')
         year_to = entities.get('year_to')
         power_from = entities.get('power_from')
+        
+        # Обработка качественных характеристик
+        query = entities.get('query', '').lower()
+        if 'быстрый' in query or 'быстрая' in query or 'быстро' in query:
+            suggestions.append("снизить требования к мощности для большего выбора")
+        elif 'медленный' in query or 'медленная' in query or 'медленно' in query:
+            suggestions.append("увеличить верхний предел мощности")
+        
+        if 'дорогой' in query or 'дорогая' in query or 'дорого' in query:
+            suggestions.append("снизить минимальную цену")
+        elif 'дешевый' in query or 'дешевая' in query or 'дешево' in query:
+            suggestions.append("увеличить верхний предел цены")
+        
+        if 'спорткар' in query or 'спорткары' in query or 'спорткара' in query or 'спорткаров' in query:
+            suggestions.append("расширить критерии спорткаров (снизить мощность или добавить другие кузова)")
+        
+        if 'экономичный' in query or 'экономичная' in query or 'экономично' in query:
+            suggestions.append("увеличить верхний предел мощности или объема двигателя")
+        
+        if 'семейный' in query or 'семейная' in query or 'семейное' in query:
+            suggestions.append("расширить критерии семейных автомобилей (добавить другие кузова)")
+        
+        if 'внедорожник' in query or 'внедорожники' in query or 'внедорожника' in query or 'внедорожников' in query:
+            suggestions.append("расширить критерии внедорожников (добавить другие типы привода)")
 
         if color:
             suggestions.append("показать варианты без фильтра по цвету")
@@ -607,6 +759,31 @@ class AutoSearchProcessor:
         затем — что показаны частично подходящие варианты, и кратко объясняем критерии подбора."""
         # Человеческое название запроса (цвет/спорткары и т.п.)
         parts = []
+        
+        # Обработка качественных характеристик
+        query_lower = query.lower()
+        if 'быстрый' in query_lower or 'быстрая' in query_lower or 'быстро' in query_lower:
+            parts.append("быстрые")
+        elif 'медленный' in query_lower or 'медленная' in query_lower or 'медленно' in query_lower:
+            parts.append("медленные")
+        
+        if 'дорогой' in query_lower or 'дорогая' in query_lower or 'дорого' in query_lower:
+            parts.append("дорогие")
+        elif 'дешевый' in query_lower or 'дешевая' in query_lower or 'дешево' in query_lower:
+            parts.append("дешевые")
+        
+        if 'спорткар' in query_lower or 'спорткары' in query_lower or 'спорткара' in query_lower or 'спорткаров' in query_lower:
+            parts.append("спорткары")
+        
+        if 'экономичный' in query_lower or 'экономичная' in query_lower or 'экономично' in query_lower:
+            parts.append("экономичные")
+        
+        if 'семейный' in query_lower or 'семейная' in query_lower or 'семейное' in query_lower:
+            parts.append("семейные")
+        
+        if 'внедорожник' in query_lower or 'внедорожники' in query_lower or 'внедорожника' in query_lower or 'внедорожников' in query_lower:
+            parts.append("внедорожники")
+        
         if entities.get('color'):
             color_val = entities['color']
             if isinstance(color_val, list):
@@ -680,6 +857,31 @@ class AutoSearchProcessor:
         if sportcar:
             pretty.pop('body_type', None)
             pretty['__sportcar__'] = True
+        
+        # Обработка качественных характеристик
+        query = pretty.get('query', '').lower()
+        if 'быстрый' in query or 'быстрая' in query or 'быстро' in query:
+            pretty['__fast__'] = True
+        elif 'медленный' in query or 'медленная' in query or 'медленно' in query:
+            pretty['__slow__'] = True
+        
+        if 'дорогой' in query or 'дорогая' in query or 'дорого' in query:
+            pretty['__expensive__'] = True
+        elif 'дешевый' in query or 'дешевая' in query or 'дешево' in query:
+            pretty['__cheap__'] = True
+        
+        if 'спорткар' in query or 'спорткары' in query or 'спорткара' in query or 'спорткаров' in query:
+            pretty['__sportcar__'] = True
+        
+        if 'экономичный' in query or 'экономичная' in query or 'экономично' in query:
+            pretty['__economical__'] = True
+        
+        if 'семейный' in query or 'семейная' in query or 'семейное' in query:
+            pretty['__family__'] = True
+        
+        if 'внедорожник' in query or 'внедорожники' in query or 'внедорожника' in query or 'внедорожников' in query:
+            pretty['__suv__'] = True
+        
         return pretty
     
     def _is_count_query(self, query: str) -> bool:
@@ -704,6 +906,30 @@ class AutoSearchProcessor:
         
         # Формируем описание критериев
         criteria_desc = []
+        
+        # Обработка качественных характеристик
+        query_lower = query.lower()
+        if 'быстрый' in query_lower or 'быстрая' in query_lower or 'быстро' in query_lower:
+            criteria_desc.append("быстрые")
+        elif 'медленный' in query_lower or 'медленная' in query_lower or 'медленно' in query_lower:
+            criteria_desc.append("медленные")
+        
+        if 'дорогой' in query_lower or 'дорогая' in query_lower or 'дорого' in query_lower:
+            criteria_desc.append("дорогие")
+        elif 'дешевый' in query_lower or 'дешевая' in query_lower or 'дешево' in query_lower:
+            criteria_desc.append("дешевые")
+        
+        if 'спорткар' in query_lower or 'спорткары' in query_lower or 'спорткара' in query_lower or 'спорткаров' in query_lower:
+            criteria_desc.append("спорткары")
+        
+        if 'экономичный' in query_lower or 'экономичная' in query_lower or 'экономично' in query_lower:
+            criteria_desc.append("экономичные")
+        
+        if 'семейный' in query_lower or 'семейная' in query_lower or 'семейное' in query_lower:
+            criteria_desc.append("семейные")
+        
+        if 'внедорожник' in query_lower or 'внедорожники' in query_lower or 'внедорожника' in query_lower or 'внедорожников' in query_lower:
+            criteria_desc.append("внедорожники")
         
         if entities.get('brand'):
             brand = entities['brand']
@@ -812,6 +1038,8 @@ class AutoSearchProcessor:
                 
                 if filters:
                     # Если найдены фильтры, сравниваем по фильтрам
+                    # Добавляем текст запроса в фильтры для обработки качественных характеристик
+                    filters['query'] = query
                     comparison_result = comparator.compare_by_filters(filters)
                     
                     if comparison_result.get('type') == 'error':
@@ -931,6 +1159,53 @@ class AutoSearchProcessor:
         if filters.get('accident_history'):
             descriptions.append(f"🚨 История аварий: {filters['accident_history']}")
         
+        # Обработка качественных характеристик из _pretty_params_for_message
+        if filters.get('__fast__'):
+            descriptions.append("⚡ Быстрые автомобили (высокая мощность, спортивные кузова)")
+        elif filters.get('__slow__'):
+            descriptions.append("🐌 Медленные автомобили (низкая мощность)")
+        
+        if filters.get('__expensive__'):
+            descriptions.append("💰 Дорогие автомобили (высокая цена)")
+        elif filters.get('__cheap__'):
+            descriptions.append("💸 Дешевые автомобили (низкая цена)")
+        
+        if filters.get('__sportcar__'):
+            descriptions.append("🏎️ Спорткары (высокая мощность, спортивные кузова)")
+        
+        if filters.get('__economical__'):
+            descriptions.append("⛽ Экономичные автомобили (низкая мощность, малый объем двигателя)")
+        
+        if filters.get('__family__'):
+            descriptions.append("👨‍👩‍👧‍👦 Семейные автомобили (много мест, практичные кузова)")
+        
+        if filters.get('__suv__'):
+            descriptions.append("🚙 Внедорожники (полный привод, высокий клиренс)")
+        
+        # Обработка качественных характеристик из текста запроса (для обратной совместимости)
+        query = filters.get('query', '').lower()
+        if 'быстрый' in query or 'быстрая' in query or 'быстро' in query:
+            descriptions.append("⚡ Быстрые автомобили (высокая мощность, спортивные кузова)")
+        elif 'медленный' in query or 'медленная' in query or 'медленно' in query:
+            descriptions.append("🐌 Медленные автомобили (низкая мощность)")
+        
+        if 'дорогой' in query or 'дорогая' in query or 'дорого' in query:
+            descriptions.append("💰 Дорогие автомобили (высокая цена)")
+        elif 'дешевый' in query or 'дешевая' in query or 'дешево' in query:
+            descriptions.append("💸 Дешевые автомобили (низкая цена)")
+        
+        if 'спорткар' in query or 'спорткары' in query or 'спорткара' in query or 'спорткаров' in query:
+            descriptions.append("🏎️ Спорткары (высокая мощность, спортивные кузова)")
+        
+        if 'экономичный' in query or 'экономичная' in query or 'экономично' in query:
+            descriptions.append("⛽ Экономичные автомобили (низкая мощность, малый объем двигателя)")
+        
+        if 'семейный' in query or 'семейная' in query or 'семейное' in query:
+            descriptions.append("👨‍👩‍👧‍👦 Семейные автомобили (много мест, практичные кузова)")
+        
+        if 'внедорожник' in query or 'внедорожники' in query or 'внедорожника' in query or 'внедорожников' in query:
+            descriptions.append("🚙 Внедорожники (полный привод, высокий клиренс)")
+        
         if not descriptions:
             return ""
         # Лаконичный блок с маркерами; без markdown для корректного HTML-рендера во фронтенде
@@ -995,6 +1270,8 @@ class AutoSearchProcessor:
         
         if has_car_info:
             # Ищем конкретный автомобиль
+            # Добавляем текст запроса в сущности для обработки качественных характеристик
+            entities['query'] = query
             search_params = self._build_search_params(entities)
             print(f"[_process_credit_query] Параметры поиска: {search_params}")
             cars = search_all_cars(**search_params)

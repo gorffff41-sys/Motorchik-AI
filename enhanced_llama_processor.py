@@ -1768,50 +1768,35 @@ class EnhancedLlamaProcessor:
     
     def _process_query_without_entities(self, query: str) -> Dict[str, Any]:
         """
-        Обрабатывает запрос без сущностей через Ollama
+        Локальная обработка запроса без сущностей (fallback вместо Ollama).
+        Сначала пробуем локальный процессор автомобилей; если пусто —
+        возвращаем вежливое сообщение без обращения к внешним LLM.
         """
+        # 1) Пытаемся обработать локально через UniversalQueryProcessor
         try:
-            import requests
-            
-            # Отправляем запрос в Ollama
-            response = requests.post(
-                "http://localhost:11434/api/generate",
-                json={
-                    "model": "llama3:8b",
-                    "prompt": self._build_ollama_prompt(query),
-                    "stream": False
-                },
-                timeout=300
-            )
-            
-            if response.status_code == 200:
-                result = response.json()
-                return {
-                    'type': 'ollama_response',
-                    'response': result.get('response', 'Извините, не удалось получить ответ.'),
-                    'cars': [],
-                    'entities': {},
-                    'ollama': True,
-                    'processing_time': time.time()
-                }
-            else:
-                return {
-                    'type': 'error',
-                    'response': 'Извините, не удалось обработать запрос.',
-                    'cars': [],
-                    'entities': {},
-                    'processing_time': time.time()
-                }
-                
+            from modules.classifiers.query_processor import UniversalQueryProcessor
+            qp = UniversalQueryProcessor()
+            local = qp.process(query, {}, user_id='enhanced_llama_fallback', show_cars=True, limit=20)
+            # Если что-то найдено или сформировано — возвращаем
+            if isinstance(local, dict) and (local.get('cars') or local.get('message') or local.get('type')):
+                # Выравниваем минимальную совместимость поля 'response'
+                if 'response' not in local and 'message' in local:
+                    local['response'] = local.get('message')
+                local.setdefault('type', 'car_list')
+                local.setdefault('entities', {})
+                local.setdefault('processing_time', time.time())
+                return local
         except Exception as e:
-            logger.error(f"Ошибка при отправке запроса в Ollama: {e}")
-            return {
-                'type': 'error',
-                'response': 'Извините, произошла ошибка при обработке запроса.',
-                'cars': [],
-                'entities': {},
-                'processing_time': time.time()
-            }
+            logger.error(f"Локальный fallback без сущностей завершился с ошибкой: {e}")
+
+        # 2) Если локально не удалось — возвращаем мягкий ответ, не дергая Ollama
+        return {
+            'type': 'error',
+            'response': 'Извините, сейчас не удалось распознать запрос. Попробуйте уточнить параметры (например: быстрый, недорогой, красный).',
+            'cars': [],
+            'entities': {},
+            'processing_time': time.time()
+        }
     
     def _build_ollama_prompt(self, query: str) -> str:
         """

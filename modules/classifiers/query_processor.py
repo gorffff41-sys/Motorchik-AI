@@ -267,6 +267,27 @@ class SearchModule:
         # --- Сбор фильтров для search_all_cars ---
         filters = {}
         
+        # --- ДОБАВЛЕНО: извлекаем все цвета из текста запроса независимо от NER ---
+        try:
+            ql_text = (query or '').lower()
+            found_color_bases = []
+            for base_color, synonyms in COLOR_SYNONYMS.items():
+                # если в тексте встречается базовое название или любой синоним
+                if base_color in ql_text or any(s.lower() in ql_text for s in synonyms):
+                    found_color_bases.append(base_color)
+            # убираем дубликаты, сохраняем порядок появления
+            seen = set()
+            unique_colors = []
+            for c in found_color_bases:
+                if c not in seen:
+                    seen.add(c)
+                    unique_colors.append(c)
+            if unique_colors:
+                # если несколько цветов — используем список, если один — оставим как список (поддержка И/ИЛИ на постфильтрации)
+                entities.setdefault('colors', unique_colors)
+        except Exception:
+            pass
+
         # --- Приведение brand к строке (en) перед формированием filters ---
         brand_entity = entities.get('brand') or entities.get('mark')
         if brand_entity and isinstance(brand_entity, dict):
@@ -285,9 +306,18 @@ class SearchModule:
         filters['drive_type'] = entities.get('drive_type') or entities.get('driving_gear_type')
         filters['city'] = entities.get('city')
         filters['seats'] = entities.get('seats')
-        # Обработка цвета - передаем весь список цветов
+        # Новые числовые фильтры производительности
+        if entities.get('power_from') is not None:
+            filters['power_from'] = entities.get('power_from')
+        if entities.get('power_to') is not None:
+            filters['power_to'] = entities.get('power_to')
+        # Обработка цвета: поддержка списка цветов и ключа 'colors'
         color_entity = entities.get('color')
-        filters['color'] = color_entity  # Передаем как есть (может быть список или строка)
+        colors_list = entities.get('colors')
+        if colors_list and isinstance(colors_list, list) and len(colors_list) > 0:
+            filters['color'] = colors_list
+        else:
+            filters['color'] = color_entity  # строка или None
         # --- ДОБАВЛЕНО: фильтр по опциям ---
         if entities.get('options'):
             opts = entities['options']
@@ -1164,6 +1194,29 @@ class UniversalQueryProcessor:
             query = str(query)
         print(f"[DEBUG] Before extract_entities: query = {query}, type = {type(query)}")
         auto_entities = self.ner_intent.extract_entities(query)
+        # Локальная обработка качественных характеристик (быстрый/медленный/дорогой/дешевый/спорткар)
+        ql = query.lower()
+        fast_words = ['быстрый', 'быстрая', 'быстрые', 'скоростной', 'скоростная', 'динамичный', 'динамичная', 'шустрый', 'шустрая']
+        slow_words = ['медленный', 'медленная', 'медленные', 'не быстрый', 'неспешный', 'спокойный']
+        expensive_words = ['дорогой', 'дорогая', 'дорогие', 'премиум', 'люксовый', 'люксовая', 'люксовые']
+        cheap_words = ['дешевый', 'дешевая', 'дешевые', 'бюджетный', 'бюджетная', 'недорогой', 'недорогая', 'недорогие']
+        sport_words = ['спорткар', 'спорткары', 'спортивный автомобиль', 'спортивная машина', 'спортивная', 'спортивный']
+        # Спорткар: кузов и мощность
+        if any(w in ql for w in sport_words):
+            auto_entities.setdefault('body_type', ['купе', 'кабриолет'])
+            auto_entities.setdefault('power_from', 200)
+        # Быстрый: мощнее
+        if any(w in ql for w in fast_words):
+            auto_entities.setdefault('power_from', 180)
+        # Медленный: менее мощный
+        if any(w in ql for w in slow_words):
+            auto_entities.setdefault('power_to', 130)
+        # Дорогой: высокий бюджет
+        if any(w in ql for w in expensive_words):
+            auto_entities.setdefault('price_from', 3000000)
+        # Дешевый: низкий бюджет
+        if any(w in ql for w in cheap_words):
+            auto_entities.setdefault('price_to', 1500000)
         entities = {**auto_entities, **entities}
         intent = self.ner_intent.classify_intent(query)
         

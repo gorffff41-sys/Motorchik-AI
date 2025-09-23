@@ -1,22 +1,35 @@
+version: "3.9"
+
 services:
-  xuy:
+  app:
     build: .
-    container_name: xuy
+    container_name: motor_app
     ports:
       - "5000:5000"
+    environment:
+      - PYTHONUNBUFFERED=1
     volumes:
       - ./instance:/app/instance
-      - ./logs:/app/logs
-      - ./static:/app/static
-      - ./avatar:/app/avatar
       - ./ml_models:/app/ml_models
-    environment:
-      - PYTHONPATH=/app
-      - PYTHONUNBUFFERED=1
+      - ./logs:/app/logs
     restart: unless-stopped
-    networks:
-      - xuy-network
 
-networks:
-  xuy-network:
-    driver: bridge
+  caddy:
+    image: caddy:2
+    container_name: motor_caddy
+    depends_on:
+      - app
+    ports:
+      - "8443:8443"
+    volumes:
+      - ./Caddyfile.stack:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    environment:
+      - XDG_DATA_HOME=/data
+      - XDG_CONFIG_HOME=/config
+    restart: unless-stopped
+
+volumes:
+  caddy_data:
+  caddy_config:

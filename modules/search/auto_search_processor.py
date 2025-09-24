@@ -377,13 +377,9 @@ class AutoSearchProcessor:
         
         # Обработка характеристик скорости
         if 'быстрый' in query or 'быстрая' in query or 'быстро' in query:
-            # Быстрые автомобили: высокая мощность и спортивные кузова
+            # Быстрые автомобили: только высокая мощность (не навязываем кузов)
             if not params.get('power_from'):
-                params['power_from'] = 200  # Минимум 200 л.с. для быстрых авто
-            if not params.get('body_type'):
-                # Добавляем спортивные типы кузова
-                sporty_bodies = ['купе', 'кабриолет', 'родстер']
-                params['body_type'] = sporty_bodies
+                params['power_from'] = 180  # Минимум 180 л.с. для быстрых авто
         
         elif 'медленный' in query or 'медленная' in query or 'медленно' in query:
             # Медленные автомобили: низкая мощность
@@ -403,13 +399,9 @@ class AutoSearchProcessor:
         
         # Обработка спорткаров
         if 'спорткар' in query or 'спорткары' in query or 'спорткара' in query or 'спорткаров' in query:
-            # Спорткары: высокая мощность и спортивные кузова
+            # Спорткары: только высокая мощность (не навязываем кузов)
             if not params.get('power_from'):
-                params['power_from'] = 300  # Минимум 300 л.с. для спорткаров
-            if not params.get('body_type'):
-                # Добавляем спортивные типы кузова
-                sporty_bodies = ['купе', 'кабриолет', 'родстер']
-                params['body_type'] = sporty_bodies
+                params['power_from'] = 200  # Минимум 200 л.с. для спорткаров
         
         # Обработка экономичных автомобилей
         if 'экономичный' in query or 'экономичная' in query or 'экономично' in query:

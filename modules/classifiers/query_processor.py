@@ -1464,13 +1464,13 @@ class UniversalQueryProcessor:
         expensive_words = ['дорогой', 'дорогая', 'дорогие', 'премиум', 'люксовый', 'люксовая', 'люксовые']
         cheap_words = ['дешевый', 'дешевая', 'дешевые', 'бюджетный', 'бюджетная', 'недорогой', 'недорогая', 'недорогие']
         sport_words = ['спорткар', 'спорткары', 'спортивный автомобиль', 'спортивная машина', 'спортивная', 'спортивный']
-        # Спорткар: кузов и мощность
+        # Спорткар: кузов и мощность (приоритет над "быстрый")
         if any(w in ql for w in sport_words):
             # Не навязываем кузов, чтобы не потерять подходящие авто; усиливаем только мощность
-            auto_entities.setdefault('power_from', 200)
-        # Быстрый: мощнее
-        if any(w in ql for w in fast_words):
-            auto_entities.setdefault('power_from', 180)
+            auto_entities['power_from'] = 200
+        # Быстрый: мощнее (только если не спорткар)
+        elif any(w in ql for w in fast_words):
+            auto_entities['power_from'] = 180
         # Медленный: менее мощный
         if any(w in ql for w in slow_words):
             auto_entities.setdefault('power_to', 130)

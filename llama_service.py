@@ -9,7 +9,7 @@ logger = logging.getLogger("llama_service")
 
 LLAMA_URLS = [
     "http://127.0.0.1:11434/api/generate",
-    "http://localhost:11434/api/generate"
+    "http://localhost:11434/api/generate","http://host.docker.internal:11434/api/generate"
 ]
 RETRY_ATTEMPTS = 3
 RETRY_BASE_DELAY = 2  # seconds
@@ -78,7 +78,7 @@ MOTORCHIK_PROMPT = """
 
 def check_llama_status():
     """Проверяет, доступен ли Ollama/LLAMA на одном из LLAMA_URLS"""
-    for base_url in ["http://127.0.0.1:11434", "http://localhost:11434"]:
+    for base_url in ["http://127.0.0.1:11434", "http://localhost:11434","http://host.docker.internal:11434"]:
         try:
             resp = requests.get(base_url, timeout=2)
             if resp.status_code == 200 or resp.status_code == 404:

@@ -1780,14 +1780,33 @@ def _search_in_table(table: str, brand: str, model: str = None, year: int = None
         with get_db() as conn:
             cursor = conn.cursor()
             
-            # Формируем базовый запрос
-            query = f"SELECT * FROM {table} WHERE LOWER(mark) LIKE ?"
-            params = [f"%{brand.lower()}%"]
+            # Формируем базовый запрос (поддержка множественных марок)
+            query = f"SELECT * FROM {table} WHERE 1=1"
+            params = []
+            brand_values = []
+            if entities and isinstance(entities.get('marks'), list) and entities['marks']:
+                brand_values = [str(b).lower() for b in entities['marks'] if b]
+            elif brand:
+                brand_values = [str(brand).lower()]
+            if brand_values:
+                brand_filters = []
+                for b in brand_values:
+                    brand_filters.append("LOWER(mark) LIKE ?")
+                    params.append(f"%{b}%")
+                query += " AND (" + " OR ".join(brand_filters) + ")"
             
-            # Добавляем условия для модели
-            if model:
-                query += " AND LOWER(model) LIKE ?"
-                params.append(f"%{model.lower()}%")
+            # Добавляем условия для модели (поддержка множественных моделей)
+            model_values = []
+            if entities and isinstance(entities.get('models'), list) and entities['models']:
+                model_values = [str(m).lower() for m in entities['models'] if m]
+            elif model:
+                model_values = [str(model).lower()]
+            if model_values:
+                model_filters = []
+                for m in model_values:
+                    model_filters.append("LOWER(model) LIKE ?")
+                    params.append(f"%{m}%")
+                query += " AND (" + " OR ".join(model_filters) + ")"
                 
             # Добавляем остальные условия
             if year:
@@ -1819,15 +1838,42 @@ def _search_in_table(table: str, brand: str, model: str = None, year: int = None
                     query += " AND mileage <= ?"
                     params.append(entities['mileage_to'])
                 
-            if city:
-                query += " AND LOWER(city) LIKE ?"
-                params.append(f"%{city.lower()}%")
+            # Город (поддержка нескольких городов)
+            city_values = []
+            if entities and isinstance(entities.get('cities'), list) and entities['cities']:
+                city_values = [str(c).lower() for c in entities['cities'] if c]
+            elif city:
+                city_values = [str(city).lower()]
+            if city_values:
+                city_filters = []
+                for c in city_values:
+                    city_filters.append("LOWER(city) LIKE ?")
+                    params.append(f"%{c}%")
+                query += " AND (" + " OR ".join(city_filters) + ")"
                 
-            if body_type:
-                # Нормализуем тип кузова (первая буква заглавная)
-                body_type_normalized = body_type.lower().capitalize()
-                query += " AND body_type = ?"
-                params.append(body_type_normalized)
+            # Тип кузова (поддержка нескольких)
+            body_values = []
+            if entities and isinstance(entities.get('body_types'), list) and entities['body_types']:
+                body_values = [str(bt).lower().capitalize() for bt in entities['body_types'] if bt]
+            elif body_type:
+                body_values = [body_type.lower().capitalize()]
+            if body_values:
+                body_filters = []
+                for bt in body_values:
+                    body_filters.append("body_type = ?")
+                    params.append(bt)
+                query += " AND (" + " OR ".join(body_filters) + ")"
+
+            # Цвет (поддержка нескольких)
+            if entities and isinstance(entities.get('colors'), list) and entities['colors']:
+                color_filters = []
+                for col in entities['colors']:
+                    color_filters.append("LOWER(color) LIKE ?")
+                    params.append(f"%{str(col).lower()}%")
+                query += " AND (" + " OR ".join(color_filters) + ")"
+            elif entities and entities.get('color'):
+                query += " AND LOWER(color) LIKE ?"
+                params.append(f"%{str(entities.get('color')).lower()}%")
             
             # Выполняем запрос
             cursor.execute(query, params)

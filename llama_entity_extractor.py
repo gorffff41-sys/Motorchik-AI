@@ -286,7 +286,9 @@ class LlamaEntityExtractor:
             'price_min','price_max','price',
             'budget_tag','premium_tag','family_tag','sport_tag','city_tag','offroad_tag','eco_tag','reliable_tag','new_tag','used_tag',
             'show_cars','intent',
-            'city'
+            'city',
+            # множественные значения
+            'marks','models','cities','body_types','colors'
         }
 
         # Триггеры наличия признаков в тексте
@@ -343,6 +345,21 @@ class LlamaEntityExtractor:
             if key not in allowed_keys:
                 continue
             if value is None or value == "":
+                continue
+            # Поддержка списков для множественных полей
+            if key in ['marks','models','cities','body_types','colors']:
+                if isinstance(value, list):
+                    collected = []
+                    for item in value:
+                        if isinstance(item, str):
+                            item_norm = item.strip()
+                            if not item_norm:
+                                continue
+                            if grounded(key[:-1] if key.endswith('s') else key, item_norm):
+                                collected.append(item_norm)
+                    if collected:
+                        normalized[key] = collected
+                # если не список — пропустим
                 continue
                 
             # Нормализация строковых значений
@@ -412,6 +429,18 @@ class LlamaEntityExtractor:
             if tag_key in normalized:
                 if not any(kw in q_lower for kw in keywords):
                     normalized.pop(tag_key, None)
+
+        # Бэкап одиночных полей для обратной совместимости
+        if 'mark' not in normalized and isinstance(normalized.get('marks'), list) and len(normalized['marks']) == 1:
+            normalized['mark'] = normalized['marks'][0]
+        if 'model' not in normalized and isinstance(normalized.get('models'), list) and len(normalized['models']) == 1:
+            normalized['model'] = normalized['models'][0]
+        if 'city' not in normalized and isinstance(normalized.get('cities'), list) and len(normalized['cities']) == 1:
+            normalized['city'] = normalized['cities'][0]
+        if 'body_type' not in normalized and isinstance(normalized.get('body_types'), list) and len(normalized['body_types']) == 1:
+            normalized['body_type'] = normalized['body_types'][0]
+        if 'color' not in normalized and isinstance(normalized.get('colors'), list) and len(normalized['colors']) == 1:
+            normalized['color'] = normalized['colors'][0]
 
         return normalized
 

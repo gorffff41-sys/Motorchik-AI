@@ -5193,11 +5193,10 @@ await loadModelsForBrand(currentFilters.brand, currentFilters);
             const carBlock = document.querySelector(`.car-cards-list[data-request-id="${requestId}"]`);
             if (carBlock) {
                 carBlock.insertAdjacentHTML('beforeend', carsHtml);
-                // Удаляем старую кнопку для этого запроса
-                const oldBtn = carBlock.querySelector(`.show-more-btn[data-request-id="${requestId}"]`);
-                if (oldBtn) {
-                    oldBtn.parentElement.remove(); // Удаляем весь div с кнопкой
-                }
+                // Удаляем ВСЕ старые кнопки для этого запроса (во всем документе)
+                document.querySelectorAll(`.show-more-btn[data-request-id="${requestId}"]`).forEach(btn => {
+                    if (btn.parentElement) btn.parentElement.remove();
+                });
                 // Если есть ещё авто — добавляем новую кнопку
                 if (end < cars.length) {
                     const btnHtml = `<div style="width:100%;display:flex;justify-content:center;"><button class="show-more-btn" data-request-id="${requestId}" onclick='loadMoreChatCars(${end}, ${requestId})' style="margin:24px 0 0 0;background:#667eea;color:#fff;font-size:1.1em;padding:12px 32px;border-radius:12px;font-weight:700;box-shadow:0 2px 8px #667eea22;cursor:pointer;border:none;"><i class="fas fa-chevron-down"></i> Показать еще (${cars.length - end} из ${cars.length})</button></div>`;
@@ -5251,6 +5250,12 @@ await loadModelsForBrand(currentFilters.brand, currentFilters);
             for (let i = start; i < end; i++) {
                 html += renderChatCarCard(cars[i], i);
             }
+            // Перед добавлением кнопки очищаем все возможные кнопки для текущего запроса (на всякий случай)
+            setTimeout(() => {
+                document.querySelectorAll(`.show-more-btn[data-request-id="${currentRequestId}"]`).forEach(btn => {
+                    if (btn.parentElement) btn.parentElement.remove();
+                });
+            }, 0);
             // Добавляем кнопку "Показать ещё" если есть ещё автомобили
             if (end < cars.length) {
                 html += `<div style="width:100%;display:flex;justify-content:center;"><button class="show-more-btn" data-request-id="${currentRequestId}" onclick='loadMoreChatCars(${end}, ${currentRequestId})' style="margin:24px 0 0 0;background:#667eea;color:#fff;font-size:1.1em;padding:12px 32px;border-radius:12px;font-weight:700;box-shadow:0 2px 8px #667eea22;cursor:pointer;border:none;"><i class="fas fa-chevron-down"></i> Показать еще (${cars.length - end} из ${cars.length})</button></div>`;
@@ -5392,6 +5397,26 @@ if (lastEntities && typeof lastEntities === 'object') {
                         }
                     }
                     // Если не кредитный калькулятор, продолжаем с остальной логикой
+
+                    // --- Новое: поддержка v4 ответа с show_cars ---
+                    try {
+                        const resp = data && data.response ? data.response : null;
+                        const result = resp && resp.result ? resp.result : null;
+                        const shouldShowCars = result && typeof result.show_cars !== 'undefined' ? !!result.show_cars : false;
+                        const cars = result && Array.isArray(result.cars) ? result.cars : [];
+                        const messageText = (resp && typeof resp.message === 'string') ? resp.message : '';
+                        // Печатаем текст от ассистента, если есть
+                        if (messageText) {
+                            addMessage(messageText, 'assistant');
+                        }
+                        // Рендерим карточки, только если флаг включен и есть автомобили
+                        if (shouldShowCars && cars.length > 0) {
+                            renderCarListMessage(cars);
+                            return;
+                        }
+                    } catch (e) {
+                        // Пропускаем, если формат другой
+                    }
                     // --- Если clarification с show_cars_required ---
                     if (data.response && data.response.type === 'clarification' && data.response.show_cars_required) {
                         // Сначала текст сообщения, потом кнопку

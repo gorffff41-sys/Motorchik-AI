@@ -1547,6 +1547,518 @@ def _search_cars_with_filters(
         print(f"Ошибка поиска (search_all_cars): {e}")
         return [] 
 
+def smart_filter_cars_with_entities(entities: dict) -> list:
+    """
+    Поиск автомобилей по словарю сущностей, извлеченных Llama
+    
+    Args:
+        entities: Словарь с извлеченными сущностями
+        
+    Returns:
+        Список найденных автомобилей
+    """
+    try:
+        # Извлекаем параметры из сущностей
+        brand = entities.get('mark')
+        model = entities.get('model')
+        year = entities.get('manufacture_year')
+        price_min = entities.get('price_min')
+        price_max = entities.get('price_max')
+        city = entities.get('city')
+        body_type = entities.get('body_type')
+        fuel_type = entities.get('fuel_type')
+        gear_box_type = entities.get('gear_box_type')
+        driving_gear_type = entities.get('driving_gear_type')
+        color = entities.get('color')
+        seats = entities.get('seats')
+        
+        # Определяем, в каких таблицах искать
+        search_tables = []
+        if entities.get('new_tag'):
+            search_tables = ['car']  # Только новые автомобили
+        elif entities.get('used_tag'):
+            search_tables = ['used_car']  # Только подержанные автомобили
+        else:
+            search_tables = ['car', 'used_car']  # Ищем в обеих таблицах
+        
+        all_results = []
+        
+        # Если не указан бренд, ищем по другим параметрам
+        if not brand:
+            return _search_cars_without_brand(entities, search_tables)
+        
+        # Ищем в каждой таблице отдельно
+        for table in search_tables:
+            try:
+                results = _search_in_table(
+                    table=table,
+                    brand=brand,
+                    model=model,
+                    year=year,
+                    price_min=price_min,
+                    price_max=price_max,
+                    city=city,
+                    body_type=body_type,
+                    entities=entities
+                )
+                all_results.extend(results)
+            except Exception as e:
+                logger.error(f"Ошибка поиска в таблице {table}: {e}")
+                continue
+        
+        return all_results
+        
+    except Exception as e:
+        logger.error(f"Ошибка в smart_filter_cars_with_entities: {e}")
+        return []
+
+def get_search_statistics(cars: list) -> dict:
+    """
+    Получает статистику по найденным автомобилям
+    
+    Args:
+        cars: Список найденных автомобилей
+        
+    Returns:
+        Словарь со статистикой
+    """
+    try:
+        if not cars:
+            return {
+                'total_count': 0,
+                'unique_brands': [],
+                'top_cars_by_brand': []
+            }
+        
+        # Подсчитываем уникальные марки
+        brands = set()
+        brand_cars = {}
+        
+        for car in cars:
+            brand = car.get('mark', '').strip()
+            if brand:
+                brands.add(brand)
+                if brand not in brand_cars:
+                    brand_cars[brand] = []
+                brand_cars[brand].append(car)
+        
+        # Получаем 5 уникальных авто по марке (или все марки если их <= 5)
+        top_cars_by_brand = []
+        unique_brands = sorted(list(brands))
+        
+        if len(unique_brands) <= 5:
+            # Если марок 5 или меньше, показываем все марки
+            for brand in unique_brands:
+                brand_car_list = brand_cars[brand]
+                # Берем первый автомобиль каждой марки
+                if brand_car_list:
+                    top_cars_by_brand.append({
+                        'brand': brand,
+                        'car': brand_car_list[0],
+                        'count': len(brand_car_list)
+                    })
+        else:
+            # Если марок больше 5, выбираем 5 самых популярных
+            brand_counts = [(brand, len(brand_cars[brand])) for brand in unique_brands]
+            brand_counts.sort(key=lambda x: x[1], reverse=True)
+            
+            for brand, count in brand_counts[:5]:
+                brand_car_list = brand_cars[brand]
+                if brand_car_list:
+                    top_cars_by_brand.append({
+                        'brand': brand,
+                        'car': brand_car_list[0],
+                        'count': count
+                    })
+        
+        return {
+            'total_count': len(cars),
+            'unique_brands': unique_brands,
+            'top_cars_by_brand': top_cars_by_brand
+        }
+        
+    except Exception as e:
+        logger.error(f"Ошибка в get_search_statistics: {e}")
+        return {
+            'total_count': 0,
+            'unique_brands': [],
+            'top_cars_by_brand': []
+        }
+
+# Гарантируем наличие логгера в модуле, даже если ранее не определен
+try:
+    logger  # type: ignore[name-defined]
+except Exception:
+    import logging as _logging
+    logger = _logging.getLogger(__name__)
+
+def get_options_for_car(car_id: int, used: bool = False, limit: int = 20) -> list:
+    """
+    Возвращает список опций для автомобиля.
+    Для новых авто читаем из таблицы option по полю car_id.
+    Для подержанных авто пытаемся читать из used_car_option если есть, иначе возвращаем пусто.
+    """
+    try:
+        with get_db() as conn:
+            cursor = conn.cursor()
+            options = []
+            # Пытаемся получить опции для новых авто
+            if not used:
+                try:
+                    cursor.execute(
+                        """
+                        SELECT id, car_id, code, description, options_group_id
+                        FROM option
+                        WHERE car_id = ?
+                        ORDER BY options_group_id, id
+                        LIMIT ?
+                        """,
+                        (car_id, limit)
+                    )
+                    rows = cursor.fetchall()
+                    for row in rows:
+                        options.append({
+                            'id': row[0],
+                            'car_id': row[1],
+                            'code': row[2],
+                            'description': row[3],
+                            'options_group_id': row[4]
+                        })
+                except Exception as e:
+                    logger.debug(f"Опции для новых авто недоступны: {e}")
+            else:
+                # Пытаемся получить опции для подержанных авто из used_car_option (если такая таблица присутствует)
+                try:
+                    cursor.execute(
+                        """
+                        SELECT id, used_car_id, code, description, options_group_id
+                        FROM used_car_option
+                        WHERE used_car_id = ?
+                        ORDER BY options_group_id, id
+                        LIMIT ?
+                        """,
+                        (car_id, limit)
+                    )
+                    rows = cursor.fetchall()
+                    for row in rows:
+                        options.append({
+                            'id': row[0],
+                            'used_car_id': row[1],
+                            'code': row[2],
+                            'description': row[3],
+                            'options_group_id': row[4]
+                        })
+                except Exception as e:
+                    logger.debug(f"Опции для подержанных авто недоступны: {e}")
+            return options
+    except Exception as e:
+        logger.error(f"Ошибка в get_options_for_car: {e}")
+        return []
+
+
+def _search_in_table(table: str, brand: str, model: str = None, year: int = None, 
+                     price_min: int = None, price_max: int = None, city: str = None, 
+                     body_type: str = None, entities: dict = None) -> list:
+    """
+    Поиск автомобилей в конкретной таблице
+    
+    Args:
+        table: Название таблицы
+        brand: Марка автомобиля
+        model: Модель автомобиля
+        year: Год производства
+        price_min: Минимальная цена
+        price_max: Максимальная цена
+        city: Город
+        body_type: Тип кузова
+        entities: Словарь с сущностями
+        
+    Returns:
+        Список найденных автомобилей
+    """
+    try:
+        with get_db() as conn:
+            cursor = conn.cursor()
+            
+            # Формируем базовый запрос
+            query = f"SELECT * FROM {table} WHERE LOWER(mark) LIKE ?"
+            params = [f"%{brand.lower()}%"]
+            
+            # Добавляем условия для модели
+            if model:
+                query += " AND LOWER(model) LIKE ?"
+                params.append(f"%{model.lower()}%")
+                
+            # Добавляем остальные условия
+            if year:
+                query += " AND manufacture_year = ?"
+                params.append(year)
+                
+            if price_min is not None:
+                query += " AND price >= ?"
+                params.append(price_min)
+                
+            if price_max is not None:
+                query += " AND price <= ?"
+                params.append(price_max)
+                
+            if city:
+                query += " AND LOWER(city) LIKE ?"
+                params.append(f"%{city.lower()}%")
+                
+            if body_type:
+                # Нормализуем тип кузова (первая буква заглавная)
+                body_type_normalized = body_type.lower().capitalize()
+                query += " AND body_type = ?"
+                params.append(body_type_normalized)
+            
+            # Выполняем запрос
+            cursor.execute(query, params)
+            columns = [desc[0] for desc in cursor.description]
+            rows = cursor.fetchall()
+            
+            # Преобразуем в словари и фильтруем
+            results = []
+            for row in rows:
+                car = dict(zip(columns, row))
+                
+                # Автоматически добавляем теги в зависимости от таблицы
+                if table == 'car':
+                    car['auto_new_tag'] = True
+                    car['auto_used_tag'] = False
+                elif table == 'used_car':
+                    car['auto_new_tag'] = False
+                    car['auto_used_tag'] = True
+                
+                if _car_matches_entities(car, entities):
+                    results.append(car)
+                    
+            return results
+            
+    except Exception as e:
+        logger.error(f"Ошибка в _search_in_table для таблицы {table}: {e}")
+        return []
+
+
+def _search_cars_without_brand(entities: dict, search_tables: list = None) -> list:
+    """
+    Поиск автомобилей без указания бренда
+    
+    Args:
+        entities: Словарь с сущностями
+        search_tables: Список таблиц для поиска
+        
+    Returns:
+        Список найденных автомобилей
+    """
+    try:
+        if search_tables is None:
+            search_tables = ['car', 'used_car']
+            
+        all_results = []
+        
+        for table in search_tables:
+            with get_db() as conn:
+                cursor = conn.cursor()
+                
+                # Формируем базовый запрос
+                query = f"SELECT * FROM {table} WHERE 1=1"
+                params = []
+                
+                # Добавляем условия
+                if entities.get('price_min'):
+                    query += " AND price >= ?"
+                    params.append(entities['price_min'])
+                    
+                if entities.get('price_max'):
+                    query += " AND price <= ?"
+                    params.append(entities['price_max'])
+                    
+                if entities.get('manufacture_year'):
+                    query += " AND manufacture_year = ?"
+                    params.append(entities['manufacture_year'])
+                    
+                if entities.get('body_type'):
+                    # Нормализуем тип кузова (первая буква заглавная)
+                    body_type = entities['body_type'].lower().capitalize()
+                    query += " AND body_type = ?"
+                    params.append(body_type)
+                    
+                if entities.get('city'):
+                    query += " AND LOWER(city) LIKE ?"
+                    params.append(f"%{entities['city'].lower()}%")
+                
+                # Выполняем запрос
+                cursor.execute(query, params)
+                columns = [desc[0] for desc in cursor.description]
+                rows = cursor.fetchall()
+                
+                # Преобразуем в словари
+                for row in rows:
+                    car = dict(zip(columns, row))
+                    
+                    # Автоматически добавляем теги в зависимости от таблицы
+                    if table == 'car':
+                        car['auto_new_tag'] = True
+                        car['auto_used_tag'] = False
+                    elif table == 'used_car':
+                        car['auto_new_tag'] = False
+                        car['auto_used_tag'] = True
+                    
+                    if _car_matches_entities(car, entities):
+                        all_results.append(car)
+                        
+        return all_results
+        
+    except Exception as e:
+        logger.error(f"Ошибка в _search_cars_without_brand: {e}")
+        return []
+
+
+def _car_matches_entities(car: dict, entities: dict) -> bool:
+    """
+    Проверяет, соответствует ли автомобиль сущностям
+    
+    Args:
+        car: Данные автомобиля
+        entities: Словарь сущностей
+        
+    Returns:
+        True если автомобиль соответствует
+    """
+    try:
+        # Проверяем теги
+        if not _car_matches_tags(car, entities):
+            return False
+            
+        # Фильтр по типу топлива
+        if entities.get('fuel_type') and car.get('fuel_type'):
+            entity_fuel = entities['fuel_type'].lower()
+            car_fuel = car['fuel_type'].lower()
+            # Проверяем точное совпадение или вхождение
+            if entity_fuel != car_fuel and entity_fuel not in car_fuel and car_fuel not in entity_fuel:
+                return False
+                
+        # Фильтр по типу коробки передач
+        if entities.get('gear_box_type') and car.get('gear_box_type'):
+            if entities['gear_box_type'].lower() not in car['gear_box_type'].lower():
+                return False
+                
+        # Фильтр по типу привода
+        if entities.get('driving_gear_type') and car.get('driving_gear_type'):
+            if entities['driving_gear_type'].lower() not in car['driving_gear_type'].lower():
+                return False
+                
+        # Фильтр по цвету
+        if entities.get('color') and car.get('color'):
+            if entities['color'].lower() not in car['color'].lower():
+                return False
+                
+        # Фильтр по количеству мест
+        if entities.get('seats') and car.get('seats'):
+            if int(entities['seats']) != int(car['seats']):
+                return False
+                
+        # Фильтр по объему двигателя
+        if entities.get('engine_vol') and car.get('engine_vol'):
+            if abs(float(entities['engine_vol']) - float(car['engine_vol'])) > 0.1:
+                return False
+                
+        # Фильтр по мощности
+        if entities.get('power') and car.get('power'):
+            if abs(float(entities['power']) - float(car['power'])) > 10:
+                return False
+                
+        return True
+        
+    except Exception as e:
+        logger.error(f"Ошибка в _car_matches_entities: {e}")
+        return False
+
+
+def _car_matches_tags(car: dict, entities: dict) -> bool:
+    """
+    Проверяет, соответствует ли автомобиль тегам
+    
+    Args:
+        car: Данные автомобиля
+        entities: Словарь сущностей
+        
+    Returns:
+        True если автомобиль соответствует тегам
+    """
+    try:
+        # Бюджетный тег
+        if entities.get('budget_tag'):
+            price = car.get('price', 0)
+            if price > 3000000:  # больше 3 млн
+                return False
+                
+        # Премиум тег
+        if entities.get('premium_tag'):
+            price = car.get('price', 0)
+            if price < 5000000:  # меньше 5 млн
+                return False
+                
+        # Семейный тег
+        if entities.get('family_tag'):
+            seats = car.get('seats', 0)
+            if seats < 5:  # меньше 5 мест
+                return False
+                
+        # Спортивный тег
+        if entities.get('sport_tag'):
+            power = car.get('power', 0)
+            if power < 200:  # меньше 200 л.с.
+                return False
+                
+        # Городской тег
+        if entities.get('city_tag'):
+            body_type = car.get('body_type', '').lower()
+            city_body_types = ['хетчбэк', 'седан', 'кроссовер']
+            if body_type not in city_body_types:
+                return False
+                
+        # Внедорожный тег
+        if entities.get('offroad_tag'):
+            body_type = car.get('body_type', '').lower()
+            offroad_body_types = ['внедорожник', 'пикап']
+            if body_type not in offroad_body_types:
+                return False
+                
+        # Экологичный тег
+        if entities.get('eco_tag'):
+            fuel_type = car.get('fuel_type', '').lower()
+            eco_fuel_types = ['гибрид', 'электрический', 'бензин']
+            if fuel_type not in eco_fuel_types:
+                return False
+                
+        # Надежный тег
+        if entities.get('reliable_tag'):
+            mark = car.get('mark', '').lower()
+            reliable_brands = ['toyota', 'honda', 'lexus', 'mazda', 'subaru']
+            if mark not in reliable_brands:
+                return False
+                
+        # Новый тег
+        if entities.get('new_tag'):
+            year = car.get('manufacture_year', 0)
+            if year < 2023:  # старше 2023 года
+                return False
+                
+        # Подержанный тег
+        if entities.get('used_tag'):
+            year = car.get('manufacture_year', 0)
+            if year >= 2023:  # новее 2023 года
+                return False
+                
+        return True
+        
+    except Exception as e:
+        logger.error(f"Ошибка в _car_matches_tags: {e}")
+        return True  # В случае ошибки пропускаем проверку тегов
+
+
 def smart_filter_cars(brand=None, model=None, year=None, price_min=None, price_max=None, city=None, body_type=None, used=None):
     """
     Поиск автомобилей:

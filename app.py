@@ -14,7 +14,7 @@ import time
 from starlette.status import HTTP_401_UNAUTHORIZED
 import secrets
 import traceback
-from flask import request
+from fastapi import Body
 import asyncio
 
 # Импорт наших модулей
@@ -43,6 +43,7 @@ from smart_query_router import route_query
 from enhanced_query_router import EnhancedQueryRouter
 from enhanced_query_router_v2 import EnhancedQueryRouterV2
 from enhanced_query_router_v3 import EnhancedQueryRouterV3
+from enhanced_query_router_v4 import EnhancedQueryRouterV4
 from enhanced_llama_processor import EnhancedLlamaProcessor
 
 # Настройка логирования
@@ -100,6 +101,7 @@ enhanced_llama_processor = EnhancedLlamaProcessor()
 enhanced_router = EnhancedQueryRouter()
 enhanced_router_v2 = EnhancedQueryRouterV2()
 enhanced_router_v3 = EnhancedQueryRouterV3()
+enhanced_router_v4 = EnhancedQueryRouterV4()
 
 # База данных готова к работе
 print("✅ База данных готова к работе")
@@ -489,9 +491,9 @@ async def chat(request: ChatRequest):
                     "is_general_query": True
                 }
             else:
-                # Используем умный роутер для классификации запроса
-                from smart_query_router import SmartQueryRouter
-                router = SmartQueryRouter()
+                # Используем улучшенный роутер v4.0 для классификации запроса
+                from enhanced_query_router_v4 import EnhancedQueryRouterV4
+                router = EnhancedQueryRouterV4()
                 is_car_query = router.is_car_related(request.message)
 
             if 'result' not in locals() and is_car_query:
@@ -534,8 +536,16 @@ async def chat(request: ChatRequest):
         
         # Логируем результат
         if isinstance(result, dict):
+            # Извлекаем сообщение для логирования (учитываем вложенную структуру result.result.message)
+            msg_for_log = result.get('message', '')
+            if not msg_for_log and isinstance(result.get('result'), dict):
+                nested_msg = result['result'].get('message', '')
+                if nested_msg:
+                    msg_for_log = nested_msg
+                    # Дублируем на верхний уровень для совместимости
+                    result['message'] = nested_msg
             logger.info(f"📋 Тип ответа: {result.get('type', 'unknown')}")
-            logger.info(f"📝 Длина сообщения: {len(str(result.get('message', '')))} символов")
+            logger.info(f"📝 Длина сообщения: {len(str(msg_for_log))} символов")
             logger.info(f"🔍 Структура ответа: {result}")
         else:
             logger.info(f"📋 Тип ответа: {type(result)}")
@@ -552,10 +562,16 @@ async def chat(request: ChatRequest):
         
         # Сохраняем запрос и ответ в историю
         try:
+            # Сообщение для истории (учитываем вложенный message)
+            history_message = result.get('message')
+            if not history_message and isinstance(result.get('result'), dict):
+                history_message = result['result'].get('message')
+            if not history_message:
+                history_message = str(result)
             user_history_manager.add_query(
                 user_id=request.user_id or "default",
                 query=request.message,
-                response=result.get('message', str(result)),
+                response=history_message,
                 intent=result.get('type', 'deepseek_response' if request.use_deepseek else 'unknown'),
                 entities=result.get('entities', {})
             )
@@ -676,6 +692,19 @@ async def search_cars(request: dict = Body(...)):
     limit = int(request.get('limit', 10))
     show_cars = bool(request.get('show_cars', False))
     entities = request.get('entities', {})
+
+    # Если явно не переданы entities, пробуем извлечь их из query через entity_service
+    if (not entities or len(entities) == 0) and query:
+        try:
+            from entity_service import extract_and_normalize
+            extracted = extract_and_normalize(query)
+            if extracted:
+                # Передаём извлечённые/нормализованные сущности в процессор
+                entities = {**extracted, **(entities or {})}
+                logger.info(f"🔍 Entities extracted from query: {extracted}")
+        except Exception as e:
+            logger.warning(f"Не удалось извлечь сущности из query: {e}")
+
     result = processor.process(query, entities=entities, user_id=user_id, offset=offset, limit=limit, show_cars=show_cars)
     return JSONResponse(content=result)
 
@@ -802,9 +831,35 @@ async def search_cars_with_filters(request: dict = Body(...)):
                    f"price_from={price_from}, price_to={price_to}, fuel_type={fuel_type}, "
                    f"body_type={body_type}, transmission={transmission}, city={city}")
         
+        # Если фильтры не заданы явно, попробуем извлечь их из свободного текстового запроса
+        option_description = request.get('option_description')
+        if not any([brand, model, year_from, year_to, price_from, price_to, fuel_type, transmission, body_type, drive_type, city, state, option_description]):
+            q = request.get('query') or request.get('q')
+            if q:
+                try:
+                    from entity_service import extract_and_normalize
+                    extracted = extract_and_normalize(q)
+                    if extracted:
+                        brand = brand or extracted.get('brand')
+                        model = model or extracted.get('model')
+                        year_from = year_from or extracted.get('year_from')
+                        year_to = year_to or extracted.get('year_to')
+                        price_from = price_from or extracted.get('price_from')
+                        price_to = price_to or extracted.get('price_to')
+                        fuel_type = fuel_type or extracted.get('fuel_type')
+                        transmission = transmission or extracted.get('transmission')
+                        body_type = body_type or extracted.get('body_type')
+                        drive_type = drive_type or extracted.get('drive_type')
+                        city = city or extracted.get('city')
+                        state = state or extracted.get('state')
+                        option_description = option_description or extracted.get('option_description')
+                        logger.info(f"🔍 Filters extracted from query: {extracted}")
+                except Exception as e:
+                    logger.warning(f"Не удалось извлечь фильтры из query: {e}")
+
         # Используем функцию поиска из database.py
         from database import search_all_cars
-        
+
         cars = search_all_cars(
             brand=brand,
             model=model,
@@ -818,6 +873,7 @@ async def search_cars_with_filters(request: dict = Body(...)):
             drive_type=drive_type,
             state=state,
             city=city,
+            option_description=option_description,
             limit=limit
         )
         
@@ -1965,18 +2021,17 @@ async def get_cities_with_stats_api():
     except Exception as e:
         return {"cities": [], "error": str(e)}
 
-@app.route('/api/cars/bulk-delete', methods=['POST'])
-def bulk_delete_cars():
-    data = request.get_json()
+@app.post('/api/cars/bulk-delete')
+async def bulk_delete_cars(data: dict = Body(...)):
     ids = data.get('ids', [])
     if not ids:
-        return {'success': False, 'error': 'No ids provided'}, 400
+        return JSONResponse(status_code=400, content={'success': False, 'error': 'No ids provided'})
     try:
         from database import delete_cars_by_ids
         deleted = delete_cars_by_ids(ids)
-        return {'success': True, 'deleted': deleted}
+        return JSONResponse(content={'success': True, 'deleted': deleted})
     except Exception as e:
-        return {'success': False, 'error': str(e)}, 500
+        return JSONResponse(status_code=500, content={'success': False, 'error': str(e)})
 
 @app.get("/api/options")
 async def get_options():
@@ -2286,18 +2341,33 @@ async def get_car_details(car_id: int, used: Optional[bool] = None):
         
         # Получаем опции
         try:
-            # Пробуем сначала с options_group_id и seqno
-            options_query = "SELECT * FROM option WHERE car_id = ? ORDER BY options_group_id, seqno"
-            try:
-                options_result = execute_query(options_query, [car_id])
-            except Exception as e:
-                # Если ошибка из-за отсутствия seqno, пробуем без него
-                if 'no such column: seqno' in str(e):
-                    options_query = "SELECT * FROM option WHERE car_id = ? ORDER BY options_group_id"
+            if is_used:
+                # Для подержанных авто читаем из used_car_option, если есть
+                options_query = "SELECT * FROM used_car_option WHERE used_car_id = ? ORDER BY options_group_id, seqno"
+                try:
                     options_result = execute_query(options_query, [car_id])
-                else:
-                    raise
-            options = [dict(opt) for opt in options_result] if options_result else []
+                except Exception as e:
+                    # Если нет seqno, пробуем без него
+                    if 'no such column: seqno' in str(e):
+                        options_query = "SELECT * FROM used_car_option WHERE used_car_id = ? ORDER BY options_group_id"
+                        options_result = execute_query(options_query, [car_id])
+                    else:
+                        # Если таблицы used_car_option нет, мягко фолбэкнемся на пустой список
+                        options_result = []
+                options = [dict(opt) for opt in options_result] if options_result else []
+            else:
+                # Новые авто — из option по car_id
+                options_query = "SELECT * FROM option WHERE car_id = ? ORDER BY options_group_id, seqno"
+                try:
+                    options_result = execute_query(options_query, [car_id])
+                except Exception as e:
+                    # Если ошибка из-за отсутствия seqno, пробуем без него
+                    if 'no such column: seqno' in str(e):
+                        options_query = "SELECT * FROM option WHERE car_id = ? ORDER BY options_group_id"
+                        options_result = execute_query(options_query, [car_id])
+                    else:
+                        raise
+                options = [dict(opt) for opt in options_result] if options_result else []
         except Exception as e:
             logger.error(f"Ошибка при получении опций: {e}")
             options = []
@@ -3117,6 +3187,46 @@ async def enhanced_chat_v3(request: ChatRequest):
         
     except Exception as e:
         logger.error(f"Ошибка в улучшенном чате v3.0: {str(e)}")
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        return JSONResponse(content={
+            "success": False,
+            "error": "Ошибка обработки запроса",
+            "message": "Извините, произошла ошибка при обработке вашего запроса."
+        })
+
+@app.post("/api/enhanced-chat-v4")
+async def enhanced_chat_v4(request: ChatRequest):
+    """Улучшенный чат v4.0 с DeepSeek/Llama ответами и статистикой поиска"""
+    try:
+        logger.info(f"=== УЛУЧШЕННЫЙ ЧАТ V4.0 ===")
+        logger.info(f"Сообщение: {request.message}")
+        logger.info(f"User ID: {request.user_id}")
+        
+        # Используем улучшенный роутер v4.0 с DeepSeek/Llama
+        result = enhanced_router_v4.route_query(request.message, request.user_id or "default")
+        
+        # Форматируем ответ для совместимости с фронтендом
+        response = {
+            "success": True,
+            "type": result.get("type", "unknown"),
+            "message": result.get("message", ""),
+            "data": result.get("result", {}),
+            "cars": result.get("result", {}).get("cars", []) if result.get("result") else [],
+            "total_found": result.get("result", {}).get("total_count", 0) if result.get("result") else 0,
+            "statistics": result.get("result", {}).get("statistics", {}) if result.get("result") else {},
+            "show_cars": result.get("result", {}).get("show_cars", True) if result.get("result") else True,
+            "llama_used": result.get("llama_used", False),
+            "mistral_used": result.get("mistral_used", False),
+            "query_type": result.get("query_type", "unknown"),
+            "version": "v4.0",
+            "features": ["DeepSeek/Llama responses", "Search statistics", "Brand analysis"]
+        }
+        
+        logger.info(f"✅ Ответ v4.0 сформирован: {response['type']}")
+        return JSONResponse(content=response)
+        
+    except Exception as e:
+        logger.error(f"Ошибка в улучшенном чате v4.0: {str(e)}")
         logger.error(f"Traceback: {traceback.format_exc()}")
         return JSONResponse(content={
             "success": False,

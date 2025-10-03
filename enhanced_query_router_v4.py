@@ -388,6 +388,16 @@ class EnhancedQueryRouterV4:
     def route_query(self, query: str, user_id: str = "default") -> Dict[str, Any]:
         """Маршрутизирует запрос к соответствующему обработчику"""
         try:
+            # Ранний быстрый чек намерения через извлечение сущностей (intent: automotive | general | other)
+            try:
+                from llama_entity_extractor import llama_entity_extractor
+                intent_entities = llama_entity_extractor.extract_entities_with_fallback(query) or {}
+                intent_label = str(intent_entities.get('intent', '')).lower()
+                if intent_label == 'other':
+                    return self._process_non_automotive(query, user_id)
+            except Exception:
+                pass
+
             query_type = self.classifier.classify_query(query)
             
             logger.info(f"Маршрутизация запроса '{query}' как {query_type.value}")
@@ -419,6 +429,14 @@ class EnhancedQueryRouterV4:
             logger.error(f"Ошибка при маршрутизации запроса '{query}': {e}")
             return self._process_non_automotive(query, user_id)
     
+    def is_car_related(self, query: str) -> bool:
+        """Совместимость: признак автомобильного запроса для внешних вызовов"""
+        try:
+            qtype = self.classifier.classify_query(query)
+            return qtype != QueryType.NON_AUTOMOTIVE
+        except Exception:
+            return True
+    
     def _process_non_automotive(self, query: str, user_id: str) -> Dict[str, Any]:
         """Обработка неавтомобильных запросов - отклонение"""
         logger.info(f"Отклонение неавтомобильного запроса: {query}")
@@ -433,19 +451,81 @@ class EnhancedQueryRouterV4:
         }
     
     def _process_automotive_search(self, query: str, user_id: str) -> Dict[str, Any]:
-        """Обработка поисковых автомобильных запросов"""
+        """Обработка поисковых автомобильных запросов с извлечением сущностей через Llama"""
         logger.info(f"Обработка поискового запроса: {query}")
         
         try:
-            from modules.search.auto_search_processor import AutoSearchProcessor
-            processor = AutoSearchProcessor()
-            result = processor.process_search_query(query, user_id)
+            # Извлекаем сущности с помощью Llama
+            from llama_entity_extractor import llama_entity_extractor
+            entities = llama_entity_extractor.extract_entities_with_fallback(query)
+            
+            # Флаг отображения карточек: по умолчанию показываем при поиске, но позволяем Llama пометить явно
+            if 'show_cars' not in entities:
+                # Простая эвристика по запросу на случай, если Llama не выставила флаг
+                lower_q = (query or '').lower()
+                entities['show_cars'] = any(word in lower_q for word in ["найди", "покажи", "подбери", "подобери", "выведи", "покажи варианты", "варианты"]) or True
+            
+            logger.info(f"Извлеченные сущности: {entities}")
+            
+            # Выполняем поиск в базе данных с извлеченными сущностями
+            from database import smart_filter_cars_with_entities, get_search_statistics, get_options_for_car
+            cars = smart_filter_cars_with_entities(entities)
+
+            # Обогащаем автомобили опциями (без тяжелых JOIN, по одному запросу на авто, ограничиваем по 20)
+            enriched_cars = []
+            for car in cars:
+                car_copy = dict(car)
+                # Определяем признак источника: строго по таблице, если маркер присутствует
+                if 'auto_used_tag' in car_copy:
+                    is_used = bool(car_copy.get('auto_used_tag'))
+                elif 'source' in car_copy:
+                    is_used = (str(car_copy.get('source')).lower() == 'used')
+                else:
+                    # Фолбэк на косвенные признаки (пробег/владельцы)
+                    is_used = bool(car_copy.get('mileage') or car_copy.get('owners_count'))
+                # Явно прокидываем признак в выдачу, чтобы фронт корректно вызывал details
+                car_copy['is_used'] = is_used
+                options = get_options_for_car(car_copy.get('id'), used=is_used, limit=20)
+                if options:
+                    car_copy['options'] = options
+                enriched_cars.append(car_copy)
+            cars = enriched_cars
+            
+            # Получаем статистику по найденным автомобилям
+            stats = get_search_statistics(cars)
+            
+            # Генерируем ответ с помощью DeepSeek или Llama (не передаем служебные флаги)
+            from search_response_generator import search_response_generator
+            prompt_entities = {k: v for k, v in entities.items() if k != 'show_cars'}
+            generated_message = search_response_generator.generate_search_response(query, cars, stats, prompt_entities)
+            
+            # Формируем результат
+            if cars:
+                result = {
+                    "success": True,
+                    "cars": cars,
+                    "total_count": len(cars),
+                    "entities": entities,
+                    "statistics": stats,
+                    "message": generated_message,
+                    "show_cars": bool(entities.get('show_cars', True))
+                }
+            else:
+                result = {
+                    "success": False,
+                    "cars": [],
+                    "total_count": 0,
+                    "entities": entities,
+                    "statistics": stats,
+                    "message": generated_message,
+                    "show_cars": bool(entities.get('show_cars', False))
+                }
             
             return {
                 "type": "automotive_search",
                 "query_type": "search",
                 "result": result,
-                "llama_used": False,
+                "llama_used": True,
                 "mistral_used": False
             }
         except Exception as e:

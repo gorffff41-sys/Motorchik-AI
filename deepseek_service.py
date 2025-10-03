@@ -15,52 +15,41 @@ class DeepSeekService:
         self.db_path = "instance/cars.db"
         
     def _find_working_api_url(self) -> str:
-        """Пробует несколько адресов DeepSeek и возвращает первый рабочий"""
+        """Пробует несколько адресов Ollama/DeepSeek и возвращает первый рабочий (/api/chat)"""
         urls = [
-            "http://host.docker.internal:11888/v1/chat/completions",
-            "http://localhost:11888/v1/chat/completions",
-            "http://127.0.0.1:11888/v1/chat/completions"
+            "http://host.docker.internal:11434/api/chat",
+            "http://localhost:11434/api/chat",
+            "http://127.0.0.1:11434/api/chat"
         ]
         for url in urls:
             try:
-                # Используем правильный формат запроса для API
                 resp = requests.post(url, json={
                     "model": "deepseek-r1:latest",
                     "messages": [{"role": "user", "content": "ping"}],
-                    "max_tokens": 1
-                }, timeout=60)
-                if resp.status_code in (200, 400):  # 400 если модель не указана, 200 если есть ответ
-                    logger.info(f"DeepSeek API доступен по адресу: {url}")
+                    "stream": False
+                }, timeout=30)
+                if resp.status_code in (200, 400):
+                    logger.info(f"DeepSeek (Ollama) API доступен по адресу: {url}")
                     return url
             except Exception as e:
-                logger.info(f"DeepSeek API не доступен по адресу {url}: {e}")
-        logger.warning("DeepSeek API не найден, используется адрес по умолчанию localhost")
-        return "http://localhost:11888/v1/chat/completions"
+                logger.info(f"DeepSeek (Ollama) API не доступен по адресу {url}: {e}")
+        logger.warning("DeepSeek (Ollama) API не найден, используется адрес по умолчанию localhost:11434/api/chat")
+        return "http://localhost:11434/api/chat"
         
     def _check_availability(self) -> bool:
-        """Проверяет доступность DeepSeek API"""
-        try:
-            response = requests.get("http://host.docker.internal:11888/v1/models", timeout=60)
-            if response.status_code == 200:
-                logger.info("DeepSeek API доступен")
-                return True
-        except Exception as e:
-            logger.info(f"DeepSeek API не доступен по адресу http://host.docker.internal:11888/v1/models: {e}")
-        try:
-            response = requests.get("http://localhost:11888/v1/models", timeout=60)
-            if response.status_code == 200:
-                logger.info("DeepSeek API доступен")
-                return True
-        except Exception as e:
-            logger.info(f"DeepSeek API не доступен по адресу http://localhost:11888/v1/models: {e}")
-        try:
-            response = requests.get("http://127.0.0.1:11888/v1/models", timeout=60)
-            if response.status_code == 200:
-                logger.info("DeepSeek API доступен")
-                return True
-        except Exception as e:
-            logger.info(f"DeepSeek API не доступен по адресу http://127.0.0.1:11888/v1/models: {e}")
-        # Если ни один из адресов не доступен, возвращаем False
+        """Проверяет доступность Ollama (DeepSeek) API"""
+        candidates = [
+            "http://host.docker.internal:11434/api/tags",
+            "http://localhost:11434/api/tags",
+            "http://127.0.0.1:11434/api/tags",
+        ]
+        for url in candidates:
+            try:
+                response = requests.get(url, timeout=10)
+                if response.status_code == 200:
+                    return True
+            except Exception:
+                continue
         return False
     
     def _generate_search_conditions(self, query: str) -> str:
@@ -323,11 +312,47 @@ class DeepSeekService:
             logger.error(f"Ошибка выполнения SQL запроса: {str(e)}")
             return {"error": str(e)}
     
+    def generate_text(self, prompt: str, system_prompt: str = "Ты — ассистент. Отвечай на русском языке.") -> str:
+        """
+        Простой генератор текста: отправляет готовый промпт в Ollama и возвращает ответ без каких-либо SQL/БД операций.
+        Используется для строго детерминированных ответов на основе уже подготовленных данных.
+        """
+        if not self.available:
+            return "Сервис генерации ответов временно недоступен."
+        try:
+            payload = {
+                "model": "deepseek-r1:latest",
+                "messages": [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": prompt}
+                ],
+                "stream": False,
+                "options": {"temperature": 0.1}
+            }
+            resp = requests.post(self.api_url, headers={"Content-Type": "application/json"}, json=payload, timeout=120)
+            if resp.status_code != 200:
+                logger.error(f"DeepSeek generate_text HTTP {resp.status_code}")
+                # Возвращаем пустую строку, чтобы верхний уровень выполнил fallback на Llama
+                return ""
+            data = resp.json()
+            if "choices" in data and data["choices"]:
+                return data["choices"][0]["message"]["content"]
+            if isinstance(data.get("message"), dict):
+                return data["message"].get("content", "")
+            return ""
+        except Exception as e:
+            logger.error(f"DeepSeek generate_text error: {e}")
+            return ""
+    
     def generate_response(self, query: str, user_id: str) -> Dict[str, Any]:
         """Генерирует ответ с автоматическим выполнением SQL запросов"""
         if not self.available:
             return {"success": False, "message": "DeepSeek недоступен"}
         
+        # Специальный режим: если user_id == 'search_response', не выполнять НИКАКИХ SQL и вернуть текст только по готовому промпту
+        if user_id == "search_response_only":
+            return {"success": False, "message": "Неверный режим вызова"}
+
         try:
             logger.info("🧠 DeepSeek: Начало обработки запроса")
             logger.info(f"🧠 DeepSeek: Запрос: {query}")
@@ -439,8 +464,8 @@ class DeepSeekService:
                         {"role": "system", "content": system_prompt},
                         {"role": "user", "content": analysis_prompt}
                     ],
-                    "temperature": 0.7,
-                    "max_tokens": 2000
+                    "stream": False,
+                    "options": {"temperature": 0.7}
                 }
                 
                 start_time = time.time()
@@ -454,9 +479,14 @@ class DeepSeekService:
                 
                 if analysis_response.status_code == 200:
                     analysis_result = analysis_response.json()
+                    # Ollama /api/chat returns {"message":{"content":...}} or {"choices":...} depending on version
+                    final_content = None
                     if "choices" in analysis_result and len(analysis_result["choices"]) > 0:
                         final_content = analysis_result["choices"][0]["message"]["content"]
+                    elif "message" in analysis_result and isinstance(analysis_result["message"], dict):
+                        final_content = analysis_result["message"].get("content")
                         
+                    if final_content:
                         # Очищаем ответ
                         final_content = re.sub(r'<think>.*?</think>', '', final_content, flags=re.IGNORECASE | re.DOTALL)
                         final_content = re.sub(r'<think>|</think>', '', final_content, flags=re.IGNORECASE)
@@ -525,8 +555,8 @@ class DeepSeekService:
                         {"role": "system", "content": system_prompt},
                         {"role": "user", "content": general_prompt}
                     ],
-                    "temperature": 0.7,
-                    "max_tokens": 1000
+                    "stream": False,
+                    "options": {"temperature": 0.7}
                 }
                 
                 start_time = time.time()
@@ -540,9 +570,13 @@ class DeepSeekService:
                 
                 if general_response.status_code == 200:
                     general_result = general_response.json()
+                    content = None
                     if "choices" in general_result and len(general_result["choices"]) > 0:
                         content = general_result["choices"][0]["message"]["content"]
+                    elif "message" in general_result and isinstance(general_result["message"], dict):
+                        content = general_result["message"].get("content")
                         
+                    if content:
                         # Очищаем ответ
                         content = re.sub(r'<think>.*?</think>', '', content, flags=re.IGNORECASE | re.DOTALL)
                         content = re.sub(r'<think>|</think>', '', content, flags=re.IGNORECASE)

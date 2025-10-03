@@ -1793,6 +1793,14 @@ def _search_in_table(table: str, brand: str, model: str = None, year: int = None
             if year:
                 query += " AND manufacture_year = ?"
                 params.append(year)
+            # Диапазон по году (включительно)
+            if entities:
+                if entities.get('year_from') is not None:
+                    query += " AND manufacture_year >= ?"
+                    params.append(entities['year_from'])
+                if entities.get('year_to') is not None:
+                    query += " AND manufacture_year <= ?"
+                    params.append(entities['year_to'])
                 
             if price_min is not None:
                 query += " AND price >= ?"
@@ -1801,6 +1809,15 @@ def _search_in_table(table: str, brand: str, model: str = None, year: int = None
             if price_max is not None:
                 query += " AND price <= ?"
                 params.append(price_max)
+
+            # Диапазон по пробегу применяем только для таблицы подержанных авто
+            if entities and table == 'used_car':
+                if entities.get('mileage_from') is not None:
+                    query += " AND mileage >= ?"
+                    params.append(entities['mileage_from'])
+                if entities.get('mileage_to') is not None:
+                    query += " AND mileage <= ?"
+                    params.append(entities['mileage_to'])
                 
             if city:
                 query += " AND LOWER(city) LIKE ?"
@@ -1877,6 +1894,14 @@ def _search_cars_without_brand(entities: dict, search_tables: list = None) -> li
                 if entities.get('manufacture_year'):
                     query += " AND manufacture_year = ?"
                     params.append(entities['manufacture_year'])
+
+                # Диапазон по году (включительно)
+                if entities.get('year_from') is not None:
+                    query += " AND manufacture_year >= ?"
+                    params.append(entities['year_from'])
+                if entities.get('year_to') is not None:
+                    query += " AND manufacture_year <= ?"
+                    params.append(entities['year_to'])
                     
                 if entities.get('body_type'):
                     # Нормализуем тип кузова (первая буква заглавная)
@@ -1887,6 +1912,14 @@ def _search_cars_without_brand(entities: dict, search_tables: list = None) -> li
                 if entities.get('city'):
                     query += " AND LOWER(city) LIKE ?"
                     params.append(f"%{entities['city'].lower()}%")
+
+                # Диапазон по пробегу (только для used_car)
+                if entities.get('mileage_from') is not None and table == 'used_car':
+                    query += " AND mileage >= ?"
+                    params.append(entities['mileage_from'])
+                if entities.get('mileage_to') is not None and table == 'used_car':
+                    query += " AND mileage <= ?"
+                    params.append(entities['mileage_to'])
                 
                 # Выполняем запрос
                 cursor.execute(query, params)

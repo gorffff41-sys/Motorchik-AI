@@ -209,8 +209,8 @@ class LlamaEntityExtractor:
                 json_str = json_match.group(0)
                 entities = json.loads(json_str)
                 
-                # Валидируем и нормализуем сущности
-                entities = self._validate_and_normalize_entities(entities)
+                # Валидируем, нормализуем и удаляем неупомянутые сущности, основываясь на исходном запросе
+                entities = self._validate_and_normalize_entities(entities, query)
                 # Грубая подстраховка для intent, если Llama не вернула
                 if 'intent' not in entities:
                     entities['intent'] = self._infer_intent_local(query)
@@ -228,17 +228,19 @@ class LlamaEntityExtractor:
             logger.error(f"Ошибка извлечения сущностей: {e}")
             return {}
 
-    def _validate_and_normalize_entities(self, entities: Dict[str, Any]) -> Dict[str, Any]:
+    def _validate_and_normalize_entities(self, entities: Dict[str, Any], query: str) -> Dict[str, Any]:
         """
         Валидирует и нормализует извлеченные сущности
         
         Args:
             entities: Словарь с сущностями
+            query: Исходный текст запроса пользователя
             
         Returns:
             Нормализованный словарь сущностей
         """
         normalized = {}
+        q_lower = (query or "").lower()
         
         # Словари для нормализации
         body_type_mapping = {
@@ -273,8 +275,73 @@ class LlamaEntityExtractor:
             'rwd': 'задний'
         }
         
+        # Допустимые ключи
+        allowed_keys = {
+            'mark','model','vin','manufacture_year','model_year',
+            'body_type','color','interior_color','door_qty','seats','dimensions','weight','cargo_volume',
+            'engine','engine_vol','fuel_type','power','gear_box_type','driving_gear_type',
+            'fuel_consumption','max_torque','acceleration_0_100','max_speed','eco_class',
+            'compl_level','code_compl',
+            'mileage','owners_count','accident','wheel_type',
+            'price_min','price_max','price',
+            'budget_tag','premium_tag','family_tag','sport_tag','city_tag','offroad_tag','eco_tag','reliable_tag','new_tag','used_tag',
+            'show_cars','intent',
+            'city'
+        }
+
+        # Триггеры наличия признаков в тексте
+        def grounded(key: str, val: Any) -> bool:
+            if key in ['show_cars','intent']:
+                return True
+            if key in ['mark','model']:
+                if not isinstance(val, str) or not val:
+                    return False
+                v = val.lower().replace(' ', '')
+                return v and (v in q_lower.replace(' ', ''))
+            if key in ['manufacture_year','model_year']:
+                try:
+                    y = int(val)
+                except Exception:
+                    return False
+                return str(y) in q_lower
+            if key in ['price_min','price_max','price']:
+                # Должны быть триггеры цены
+                has_price_tokens = any(tok in q_lower for tok in ['млн','миллион','тыс','тысяч','руб','₽','цена','стоимость','до','от']) or bool(re.search(r"\d\s*[\.,]?\d*\s*(млн|тыс)", q_lower))
+                if not has_price_tokens:
+                    return False
+                # Семантика диапазона: если только 'до' — не оставляем price_min; если только 'от' — не оставляем price_max
+                if key == 'price_min' and ('до' in q_lower and 'от' not in q_lower):
+                    return False
+                if key == 'price_max' and ('от' in q_lower and 'до' not in q_lower):
+                    return False
+                return True
+            if key in ['mileage']:
+                return any(tok in q_lower for tok in ['пробег','км'])
+            if key in ['seats']:
+                return ('мест' in q_lower) or bool(re.search(r"\b[2-9]\s*мест", q_lower))
+            if key == 'body_type':
+                return any(k in q_lower for k in ['седан','хэтч','хэтчбек','универсал','внедорожник','кроссовер','купе','кабриолет','пикап','джип'])
+            if key == 'fuel_type':
+                return any(k in q_lower for k in ['бензин','дизель','гибрид','электро','электрический','газ'])
+            if key == 'gear_box_type':
+                return any(k in q_lower for k in ['автомат','механика','вариатор','робот'])
+            if key == 'driving_gear_type':
+                return any(k in q_lower for k in ['передний привод','задний привод','полный привод','4wd','awd','fwd','rwd','передний','задний','полный'])
+            if key == 'color':
+                return any(k in q_lower for k in ['белый','черный','красный','синий','серый','серебристый','зеленый','желтый','оранжевый','коричневый','бежевый'])
+            if key == 'city':
+                return 'в ' in q_lower or 'город' in q_lower
+            # Теги — проверяем по словарям ниже после нормализации
+            if key.endswith('_tag'):
+                return True
+            # Прочие числовые/технические — требуем явных упоминаний общих терминов
+            generic_tokens = ['двигател', 'мотор', 'мощност', 'объем', 'разгон', 'эколог', 'евро', 'комплектаци']
+            return any(tok in q_lower for tok in generic_tokens)
+
         # Нормализуем каждую сущность
         for key, value in entities.items():
+            if key not in allowed_keys:
+                continue
             if value is None or value == "":
                 continue
                 
@@ -322,8 +389,30 @@ class LlamaEntityExtractor:
                 elif key in ['seats'] and (value < 2 or value > 9):
                     continue  # Пропускаем нереалистичное количество мест
                     
+            # Убираем поля, которые не подтверждены в исходном запросе
+            if not grounded(key, value):
+                continue
+
             normalized[key] = value
             
+        # Теги перепроверяем по ключевым словам (чтобы не тащить лишние)
+        tag_mappings = {
+            'budget_tag': ['дешев', 'недорог', 'бюджет', 'эконом'],
+            'premium_tag': ['премиум', 'люкс', 'элит', 'престиж'],
+            'family_tag': ['семей', 'для семьи', '7 мест', 'семь мест', 'просторн'],
+            'sport_tag': ['спорт', 'быстр', 'мощн', 'динамич'],
+            'city_tag': ['город', 'городск', 'компакт', 'маневрен'],
+            'offroad_tag': ['внедорож', 'бездорож', 'проходим', 'джип'],
+            'eco_tag': ['эко', 'эколог', 'низким расходом', 'экономич'],
+            'reliable_tag': ['надежн', 'проверенн', 'качеств', 'долговеч'],
+            'new_tag': ['новый', 'свеж', 'современ', 'актуаль'],
+            'used_tag': ['подерж', 'б/у', 'с пробегом', 'бу']
+        }
+        for tag_key, keywords in tag_mappings.items():
+            if tag_key in normalized:
+                if not any(kw in q_lower for kw in keywords):
+                    normalized.pop(tag_key, None)
+
         return normalized
 
     def _infer_intent_local(self, query: str) -> str:

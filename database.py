@@ -1572,6 +1572,61 @@ def smart_filter_cars_with_entities(entities: dict) -> list:
         color = entities.get('color')
         seats = entities.get('seats')
         
+        # Обрабатываем опции
+        option_description = entities.get('option_description')
+        option_descriptions = entities.get('option_descriptions')
+        option_code = entities.get('option_code')
+        option_codes = entities.get('option_codes')
+        
+        # Если есть множественные опции, используем их
+        if option_descriptions:
+            option_description = option_descriptions
+        if option_codes:
+            option_code = option_codes
+        
+        # Обрабатываем множественные сущности
+        # Марки
+        if entities.get('marks'):
+            entities['marks'] = entities['marks']
+        elif brand:
+            entities['marks'] = [brand]
+        
+        # Цвета
+        if entities.get('colors'):
+            entities['colors'] = entities['colors']
+        elif color:
+            entities['colors'] = [color]
+        
+        # Типы кузова
+        if entities.get('body_types'):
+            entities['body_types'] = entities['body_types']
+        elif body_type:
+            entities['body_types'] = [body_type]
+        
+        # Типы топлива
+        if entities.get('fuel_types'):
+            entities['fuel_types'] = entities['fuel_types']
+        elif fuel_type:
+            entities['fuel_types'] = [fuel_type]
+        
+        # Типы коробки передач
+        if entities.get('gear_box_types'):
+            entities['gear_box_types'] = entities['gear_box_types']
+        elif gear_box_type:
+            entities['gear_box_types'] = [gear_box_type]
+        
+        # Типы привода
+        if entities.get('driving_gear_types'):
+            entities['driving_gear_types'] = entities['driving_gear_types']
+        elif driving_gear_type:
+            entities['driving_gear_types'] = [driving_gear_type]
+        
+        # Города
+        if entities.get('cities'):
+            entities['cities'] = entities['cities']
+        elif city:
+            entities['cities'] = [city]
+        
         # Определяем, в каких таблицах искать
         search_tables = []
         if entities.get('new_tag'):
@@ -1895,12 +1950,103 @@ def _search_in_table(table: str, brand: str, model: str = None, year: int = None
                 
                 if _car_matches_entities(car, entities):
                     results.append(car)
+            
+            # Фильтрация по опциям, если указаны
+            if entities and (entities.get('option_description') or entities.get('option_code')):
+                results = _filter_cars_by_options(results, entities, table)
                     
             return results
             
     except Exception as e:
         logger.error(f"Ошибка в _search_in_table для таблицы {table}: {e}")
         return []
+
+
+def _filter_cars_by_options(cars: list, entities: dict, table: str) -> list:
+    """
+    Фильтрует автомобили по опциям
+    
+    Args:
+        cars: Список автомобилей для фильтрации
+        entities: Словарь с сущностями
+        table: Название таблицы (car или used_car)
+        
+    Returns:
+        Отфильтрованный список автомобилей
+    """
+    if not cars:
+        return cars
+        
+    try:
+        with get_db() as conn:
+            cursor = conn.cursor()
+            
+            # Определяем таблицу опций
+            option_table = 'option' if table == 'car' else 'used_car_option'
+            car_id_field = 'car_id' if table == 'car' else 'used_car_id'
+            
+            # Получаем опции для фильтрации
+            option_description = entities.get('option_description')
+            option_code = entities.get('option_code')
+            
+            filtered_cars = []
+            
+            for car in cars:
+                car_id = car.get('id')
+                if not car_id:
+                    continue
+                    
+                # Проверяем наличие опций у автомобиля
+                has_required_options = True
+                
+                if option_description:
+                    if isinstance(option_description, list):
+                        # Множественные опции - автомобиль должен иметь ВСЕ указанные опции
+                        for desc in option_description:
+                            cursor.execute(
+                                f"SELECT COUNT(*) FROM {option_table} WHERE {car_id_field} = ? AND LOWER(description) LIKE ?",
+                                (car_id, f"%{desc.lower()}%")
+                            )
+                            if cursor.fetchone()[0] == 0:
+                                has_required_options = False
+                                break
+                    else:
+                        # Одна опция
+                        cursor.execute(
+                            f"SELECT COUNT(*) FROM {option_table} WHERE {car_id_field} = ? AND LOWER(description) LIKE ?",
+                            (car_id, f"%{option_description.lower()}%")
+                        )
+                        if cursor.fetchone()[0] == 0:
+                            has_required_options = False
+                
+                if option_code and has_required_options:
+                    if isinstance(option_code, list):
+                        # Множественные коды опций
+                        for code in option_code:
+                            cursor.execute(
+                                f"SELECT COUNT(*) FROM {option_table} WHERE {car_id_field} = ? AND code = ?",
+                                (car_id, code)
+                            )
+                            if cursor.fetchone()[0] == 0:
+                                has_required_options = False
+                                break
+                    else:
+                        # Один код опции
+                        cursor.execute(
+                            f"SELECT COUNT(*) FROM {option_table} WHERE {car_id_field} = ? AND code = ?",
+                            (car_id, option_code)
+                        )
+                        if cursor.fetchone()[0] == 0:
+                            has_required_options = False
+                
+                if has_required_options:
+                    filtered_cars.append(car)
+            
+            return filtered_cars
+            
+    except Exception as e:
+        logger.error(f"Ошибка фильтрации по опциям: {e}")
+        return cars  # Возвращаем исходный список в случае ошибки
 
 
 def _search_cars_without_brand(entities: dict, search_tables: list = None) -> list:

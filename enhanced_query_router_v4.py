@@ -212,10 +212,17 @@ class EnhancedQueryClassifierV4:
             'авто', 'машина', 'автомобиль', 'bmw', 'мерседес', 'ауди', 'тойота', 'хонда', 'лада', 'kia', 'hyundai',
             # корни и английские варианты брендов/слов
             'машин', 'автомобил', 'mercedes', 'toyota', 'audi', 'honda', 'lada', 'kia', 'hyundai', 'camry', 'x5',
+            # Дополнительные бренды
+            'geely', 'jaecoo', 'dongfeng', 'chery', 'byd', 'haval', 'ford', 'chevrolet', 'renault', 'peugeot', 'citroen',
+            'skoda', 'volkswagen', 'vw', 'nissan', 'mazda', 'suzuki', 'mitsubishi', 'subaru', 'lexus', 'infiniti',
+            'acura', 'genesis', 'volvo', 'saab', 'opel', 'fiat', 'alfa romeo', 'lancia', 'seat', 'dacia',
             'седан', 'хэтчбек', 'универсал', 'внедорожник', 'кроссовер', 'спорткар',
             'бензин', 'дизель', 'газ', 'электро', 'гибрид',
             'автомат', 'механика', 'вариатор', 'робот',
             'передний привод', 'задний привод', 'полный привод',
+            # Ключевые слова для сравнения и рекомендаций
+            'сравни', 'сравнение', 'что лучше', 'что выбрать', 'рекомендуй', 'посоветуй',
+            'разница', 'отличается', 'против', 'или', 'vs', 'лучше', 'хуже',
             'двигатель', 'мотор', 'коробка', 'трансмиссия',
             'подвеска', 'тормоз', 'колесо', 'шина',
             'страховка', 'каско', 'осаго', 'техосмотр',
@@ -388,16 +395,6 @@ class EnhancedQueryRouterV4:
     def route_query(self, query: str, user_id: str = "default") -> Dict[str, Any]:
         """Маршрутизирует запрос к соответствующему обработчику"""
         try:
-            # Ранний быстрый чек намерения через извлечение сущностей (intent: automotive | general | other)
-            try:
-                from llama_entity_extractor import llama_entity_extractor
-                intent_entities = llama_entity_extractor.extract_entities_with_fallback(query) or {}
-                intent_label = str(intent_entities.get('intent', '')).lower()
-                if intent_label == 'other':
-                    return self._process_non_automotive(query, user_id)
-            except Exception:
-                pass
-
             query_type = self.classifier.classify_query(query)
             
             logger.info(f"Маршрутизация запроса '{query}' как {query_type.value}")
@@ -458,6 +455,10 @@ class EnhancedQueryRouterV4:
             # Извлекаем сущности с помощью Llama
             from llama_entity_extractor import llama_entity_extractor
             entities = llama_entity_extractor.extract_entities_with_fallback(query)
+            
+            # Проверяем intent - если other, то отклоняем запрос
+            if entities.get('intent') == 'other':
+                return self._process_non_automotive(query, user_id)
             
             # Флаг отображения карточек: по умолчанию показываем при поиске, но позволяем Llama пометить явно
             if 'show_cars' not in entities:
@@ -544,9 +545,23 @@ class EnhancedQueryRouterV4:
         
         try:
             from llama_service import generate_with_llama as llama_chat
+            from db_entity_mapper import DatabaseEntityMapper
             
-            system_prompt = """
+            # Извлекаем сущности из запроса
+            entities = self._extract_entities_from_query(query)
+            logger.info(f"Извлеченные сущности для вопроса: {entities}")
+            
+            # Получаем реальные данные из БД для контекста
+            real_cars_data = self._get_real_cars_for_question(entities, limit=5)
+            logger.info(f"Найдено {len(real_cars_data)} автомобилей для контекста")
+            
+            # Формируем контекст с реальными данными
+            cars_context = self._format_cars_for_llama(real_cars_data)
+            
+            system_prompt = f"""
             Ты - эксперт по автомобилям с многолетним опытом. Отвечай на вопросы об автомобилях простым и понятным языком.
+            
+            ВАЖНО: Отвечай СТРОГО на русском языке. Никаких английских слов или фраз.
             
             При ответе:
             - Объясняй технические термины простыми словами
@@ -554,16 +569,28 @@ class EnhancedQueryRouterV4:
             - Указывай плюсы и минусы при сравнениях
             - Приводи примеры конкретных моделей когда уместно
             - Будь дружелюбным и полезным
+            - Используй HTML-теги для форматирования: <h3> для заголовков, <ul><li> для списков, <strong> для выделения, <br> для переносов строк
+            - Структурируй ответ с помощью HTML для лучшего отображения
+            
+            РЕАЛЬНЫЕ ДАННЫЕ ИЗ БАЗЫ:
+            {cars_context}
             """
             
             llama_response = llama_chat(f"{system_prompt.strip()}\n\nПользователь: {query}\nАссистент:")
+            
+            # Проверяем, что ответ на русском языке
+            if not self._is_russian_text(llama_response):
+                logger.warning(f"Ответ не на русском языке, переводим: {llama_response[:100]}...")
+                # Если ответ не на русском, добавляем принудительное требование
+                llama_response = llama_chat(f"{system_prompt.strip()}\n\nВАЖНО: Отвечай ТОЛЬКО на русском языке!\n\nПользователь: {query}\nАссистент:")
             
             return {
                 "type": "automotive_question",
                 "query_type": "question",
                 "message": llama_response,
                 "llama_used": True,
-                "mistral_used": False
+                "mistral_used": False,
+                "real_cars_count": len(real_cars_data)
             }
         except Exception as e:
             logger.error(f"Ошибка в Mistral: {e}")
@@ -581,9 +608,23 @@ class EnhancedQueryRouterV4:
         
         try:
             from llama_service import generate_with_llama as llama_chat
+            from db_entity_mapper import DatabaseEntityMapper
             
-            system_prompt = """
+            # Извлекаем сущности из запроса
+            entities = self._extract_entities_from_query(query)
+            logger.info(f"Извлеченные сущности для сравнения: {entities}")
+            
+            # Получаем реальные данные из БД
+            real_cars_data = self._get_real_cars_for_comparison(entities, limit=5)
+            logger.info(f"Найдено {len(real_cars_data)} автомобилей для сравнения")
+            
+            # Формируем контекст с реальными данными
+            cars_context = self._format_cars_for_llama(real_cars_data)
+            
+            system_prompt = f"""
             Ты - эксперт по автомобилям. Сравнивай автомобильные варианты объективно и детально.
+            
+            ВАЖНО: Отвечай СТРОГО на русском языке. Никаких английских слов или фраз.
             
             При сравнении:
             - Указывай конкретные плюсы и минусы каждого варианта
@@ -591,16 +632,36 @@ class EnhancedQueryRouterV4:
             - Давай практические рекомендации
             - Учитывай стоимость владения, надежность, комфорт
             - Будь честным и объективным
+            - Используй HTML-теги для форматирования: <h3> для заголовков, <ul><li> для списков, <strong> для выделения, <br> для переносов строк
+            - Структурируй ответ с помощью HTML для лучшего отображения
+            
+            РЕАЛЬНЫЕ ДАННЫЕ ИЗ БАЗЫ:
+            {cars_context}
+            
+            ПРИМЕР ПРАВИЛЬНОГО ОТВЕТА:
+            <h3>Сравнение Geely Preface и Jaecoo J7</h3>
+            <p>Рассмотрим основные характеристики этих автомобилей:</p>
+            <ul>
+            <li><strong>Geely Preface:</strong> более современный дизайн</li>
+            <li><strong>Jaecoo J7:</strong> практичный и надежный</li>
+            </ul>
             """
             
             llama_response = llama_chat(f"{system_prompt.strip()}\n\nПользователь: {query}\nАссистент:")
+            
+            # Проверяем, что ответ на русском языке
+            if not self._is_russian_text(llama_response):
+                logger.warning(f"Ответ не на русском языке, переводим: {llama_response[:100]}...")
+                # Если ответ не на русском, добавляем принудительное требование
+                llama_response = llama_chat(f"{system_prompt.strip()}\n\nВАЖНО: Отвечай ТОЛЬКО на русском языке!\n\nПользователь: {query}\nАссистент:")
             
             return {
                 "type": "automotive_comparison",
                 "query_type": "comparison",
                 "message": llama_response,
                 "llama_used": True,
-                "mistral_used": False
+                "mistral_used": False,
+                "real_cars_count": len(real_cars_data)
             }
         except Exception as e:
             logger.error(f"Ошибка в Mistral: {e}")
@@ -618,9 +679,23 @@ class EnhancedQueryRouterV4:
         
         try:
             from llama_service import generate_with_llama as llama_chat
+            from db_entity_mapper import DatabaseEntityMapper
             
-            system_prompt = """
+            # Извлекаем сущности из запроса
+            entities = self._extract_entities_from_query(query)
+            logger.info(f"Извлеченные сущности для рекомендации: {entities}")
+            
+            # Получаем реальные данные из БД
+            real_cars_data = self._get_real_cars_for_recommendation(entities, limit=5)
+            logger.info(f"Найдено {len(real_cars_data)} автомобилей для рекомендации")
+            
+            # Формируем контекст с реальными данными
+            cars_context = self._format_cars_for_llama(real_cars_data)
+            
+            system_prompt = f"""
             Ты - опытный автомобильный консультант. Давай персональные рекомендации по выбору автомобилей.
+            
+            ВАЖНО: Отвечай СТРОГО на русском языке. Никаких английских слов или фраз.
             
             При рекомендациях:
             - Учитывай потребности и бюджет пользователя
@@ -629,16 +704,28 @@ class EnhancedQueryRouterV4:
             - Давай советы по выбору и покупке
             - Учитывай надежность, стоимость владения, комфорт
             - Будь практичным и реалистичным
+            - Используй HTML-теги для форматирования: <h3> для заголовков, <ul><li> для списков, <strong> для выделения, <br> для переносов строк
+            - Структурируй ответ с помощью HTML для лучшего отображения
+            
+            РЕАЛЬНЫЕ ДАННЫЕ ИЗ БАЗЫ:
+            {cars_context}
             """
             
             llama_response = llama_chat(f"{system_prompt.strip()}\n\nПользователь: {query}\nАссистент:")
+            
+            # Проверяем, что ответ на русском языке
+            if not self._is_russian_text(llama_response):
+                logger.warning(f"Ответ не на русском языке, переводим: {llama_response[:100]}...")
+                # Если ответ не на русском, добавляем принудительное требование
+                llama_response = llama_chat(f"{system_prompt.strip()}\n\nВАЖНО: Отвечай ТОЛЬКО на русском языке!\n\nПользователь: {query}\nАссистент:")
             
             return {
                 "type": "automotive_recommendation",
                 "query_type": "recommendation",
                 "message": llama_response,
                 "llama_used": True,
-                "мistral_used": False
+                "mistral_used": False,
+                "real_cars_count": len(real_cars_data)
             }
         except Exception as e:
             logger.error(f"Ошибка в Mistral: {e}")
@@ -655,10 +742,24 @@ class EnhancedQueryRouterV4:
         logger.info(f"Обработка помощи: {query}")
         
         try:
-            from mistral_service import generate_mistral_response
+            from llama_service import generate_with_llama as llama_chat
+            from db_entity_mapper import DatabaseEntityMapper
             
-            system_prompt = """
+            # Извлекаем сущности из запроса
+            entities = self._extract_entities_from_query(query)
+            logger.info(f"Извлеченные сущности для помощи: {entities}")
+            
+            # Получаем реальные данные из БД для контекста
+            real_cars_data = self._get_real_cars_for_help(entities, limit=5)
+            logger.info(f"Найдено {len(real_cars_data)} автомобилей для контекста")
+            
+            # Формируем контекст с реальными данными
+            cars_context = self._format_cars_for_llama(real_cars_data)
+            
+            system_prompt = f"""
             Ты - опытный автомобильный консультант. Помогай пользователям с поиском и выбором автомобилей.
+            
+            ВАЖНО: Отвечай СТРОГО на русском языке. Никаких английских слов или фраз.
             
             При помощи:
             - Дай пошаговую инструкцию
@@ -667,16 +768,28 @@ class EnhancedQueryRouterV4:
             - Предложи критерии для поиска
             - Будь терпеливым и подробным
             - Учитывай разные уровни знаний пользователей
+            - Используй HTML-теги для форматирования: <h3> для заголовков, <ul><li> для списков, <strong> для выделения, <br> для переносов строк
+            - Структурируй ответ с помощью HTML для лучшего отображения
+            
+            РЕАЛЬНЫЕ ДАННЫЕ ИЗ БАЗЫ:
+            {cars_context}
             """
             
-            mistral_response = generate_mistral_response(query, system_prompt)
+            llama_response = llama_chat(f"{system_prompt.strip()}\n\nПользователь: {query}\nАссистент:")
+            
+            # Проверяем, что ответ на русском языке
+            if not self._is_russian_text(llama_response):
+                logger.warning(f"Ответ не на русском языке, переводим: {llama_response[:100]}...")
+                # Если ответ не на русском, добавляем принудительное требование
+                llama_response = llama_chat(f"{system_prompt.strip()}\n\nВАЖНО: Отвечай ТОЛЬКО на русском языке!\n\nПользователь: {query}\nАссистент:")
             
             return {
                 "type": "automotive_help",
                 "query_type": "help",
-                "message": mistral_response,
-                "llama_used": False,
-                "mistral_used": True
+                "message": llama_response,
+                "llama_used": True,
+                "mistral_used": False,
+                "real_cars_count": len(real_cars_data)
             }
         except Exception as e:
             logger.error(f"Ошибка в Mistral: {e}")
@@ -785,6 +898,167 @@ class EnhancedQueryRouterV4:
                 "llama_used": False,
                 "mistral_used": False
             }
+    
+    def _get_real_cars_for_comparison(self, entities: Dict[str, Any], limit: int = 5) -> List[Dict[str, Any]]:
+        """Получает реальные автомобили для сравнения"""
+        try:
+            from db_entity_mapper import DatabaseEntityMapper
+            
+            with DatabaseEntityMapper() as mapper:
+                # Извлекаем марки и модели из сущностей
+                brands = entities.get('brands', [])
+                models = entities.get('models', [])
+                
+                # Если есть конкретные марки/модели, ищем их
+                if brands or models:
+                    cars = mapper.search_cars_by_entities(entities, limit=limit)
+                else:
+                    # Если нет конкретных критериев, берем популярные автомобили
+                    cars = mapper.get_popular_cars(limit=limit)
+                
+                return cars
+                
+        except Exception as e:
+            logger.error(f"Ошибка получения данных для сравнения: {e}")
+            return []
+    
+    def _get_real_cars_for_recommendation(self, entities: Dict[str, Any], limit: int = 5) -> List[Dict[str, Any]]:
+        """Получает реальные автомобили для рекомендаций"""
+        try:
+            from db_entity_mapper import DatabaseEntityMapper
+            
+            with DatabaseEntityMapper() as mapper:
+                # Извлекаем критерии из сущностей
+                price_from = entities.get('price_from')
+                price_to = entities.get('price_to')
+                brands = entities.get('brands', [])
+                body_types = entities.get('body_types', [])
+                
+                # Формируем критерии поиска
+                search_criteria = {}
+                if price_from:
+                    search_criteria['price_from'] = price_from
+                if price_to:
+                    search_criteria['price_to'] = price_to
+                if brands:
+                    search_criteria['brands'] = brands
+                if body_types:
+                    search_criteria['body_types'] = body_types
+                
+                # Ищем автомобили по критериям
+                if search_criteria:
+                    cars = mapper.search_cars_by_entities(search_criteria, limit=limit)
+                else:
+                    # Если нет критериев, берем разнообразные автомобили
+                    cars = mapper.get_diverse_cars(limit=limit)
+                
+                return cars
+                
+        except Exception as e:
+            logger.error(f"Ошибка получения данных для рекомендации: {e}")
+            return []
+    
+    def _get_real_cars_for_question(self, entities: Dict[str, Any], limit: int = 5) -> List[Dict[str, Any]]:
+        """Получает реальные автомобили для вопросов"""
+        try:
+            from db_entity_mapper import DatabaseEntityMapper
+            
+            with DatabaseEntityMapper() as mapper:
+                # Извлекаем критерии из сущностей
+                brands = entities.get('brands', [])
+                models = entities.get('models', [])
+                body_types = entities.get('body_types', [])
+                
+                # Формируем критерии поиска
+                search_criteria = {}
+                if brands:
+                    search_criteria['brands'] = brands
+                if models:
+                    search_criteria['models'] = models
+                if body_types:
+                    search_criteria['body_types'] = body_types
+                
+                # Ищем автомобили по критериям
+                if search_criteria:
+                    cars = mapper.search_cars_by_entities(search_criteria, limit=limit)
+                else:
+                    # Если нет критериев, берем разнообразные автомобили
+                    cars = mapper.get_diverse_cars(limit=limit)
+                
+                return cars
+                
+        except Exception as e:
+            logger.error(f"Ошибка получения данных для вопроса: {e}")
+            return []
+    
+    def _get_real_cars_for_help(self, entities: Dict[str, Any], limit: int = 5) -> List[Dict[str, Any]]:
+        """Получает реальные автомобили для помощи"""
+        try:
+            from db_entity_mapper import DatabaseEntityMapper
+            
+            with DatabaseEntityMapper() as mapper:
+                # Для помощи берем разнообразные автомобили как примеры
+                cars = mapper.get_diverse_cars(limit=limit)
+                return cars
+                
+        except Exception as e:
+            logger.error(f"Ошибка получения данных для помощи: {e}")
+            return []
+    
+    def _extract_entities_from_query(self, query: str) -> Dict[str, Any]:
+        """Извлекает сущности из запроса с помощью Llama"""
+        try:
+            from llama_entity_extractor import llama_entity_extractor
+            entities = llama_entity_extractor.extract_entities_with_fallback(query)
+            logger.info(f"Извлеченные сущности: {entities}")
+            return entities
+        except Exception as e:
+            logger.error(f"Ошибка извлечения сущностей: {e}")
+            return {}
+    
+    def _is_russian_text(self, text: str) -> bool:
+        """Проверяет, содержит ли текст русские символы"""
+        if not text or not text.strip():
+            return False
+        
+        # Подсчитываем русские символы
+        russian_chars = sum(1 for char in text if '\u0400' <= char <= '\u04FF')
+        total_chars = sum(1 for char in text if char.isalpha())
+        
+        if total_chars == 0:
+            return True  # Если нет букв, считаем русским
+        
+        # Если больше 50% русских символов, считаем русским
+        return (russian_chars / total_chars) > 0.5
+    
+    def _format_cars_for_llama(self, cars: List[Dict[str, Any]]) -> str:
+        """Форматирует данные автомобилей для передачи в Llama"""
+        if not cars:
+            return "Данные автомобилей не найдены."
+        
+        formatted_cars = []
+        for i, car in enumerate(cars, 1):
+            car_type = car.get('car_type', 'unknown')
+            car_type_text = "Новый" if car_type == 'new' else "С пробегом" if car_type == 'used' else "Неизвестно"
+            
+            car_info = f"""
+Автомобиль {i} ({car_type_text}):
+- Марка: {car.get('mark', 'Не указана')}
+- Модель: {car.get('model', 'Не указана')}
+- Год: {car.get('manufacture_year', 'Не указан')}
+- Цена: {car.get('price', 'Не указана')} руб.
+- Город: {car.get('city', 'Не указан')}
+- Тип кузова: {car.get('body_type', 'Не указан')}
+- Двигатель: {car.get('engine', 'Не указан')}
+- Коробка передач: {car.get('gear_box_type', 'Не указана')}
+- Привод: {car.get('driving_gear_type', 'Не указан')}
+- Цвет: {car.get('color', 'Не указан')}
+- Мощность: {car.get('power', 'Не указана')} л.с.
+- Дилер: {car.get('dealer_center', 'Не указан')}
+"""
+            formatted_cars.append(car_info)
+        
+        return "\n".join(formatted_cars)
 
 # Пример использования
 if __name__ == "__main__":

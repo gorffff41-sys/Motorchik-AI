@@ -5404,11 +5404,6 @@ if (lastEntities && typeof lastEntities === 'object') {
                         const result = resp && resp.result ? resp.result : null;
                         const shouldShowCars = result && typeof result.show_cars !== 'undefined' ? !!result.show_cars : false;
                         const cars = result && Array.isArray(result.cars) ? result.cars : [];
-                        const messageText = (resp && typeof resp.message === 'string') ? resp.message : '';
-                        // Печатаем текст от ассистента, если есть
-                        if (messageText) {
-                            addMessage(messageText, 'assistant');
-                        }
                         // Рендерим карточки, только если флаг включен и есть автомобили
                         if (shouldShowCars && cars.length > 0) {
                             renderCarListMessage(cars);
